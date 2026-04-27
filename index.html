@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harvey Lexus Sales Tracker</title>
+<style>
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f5f5f4;
+  --color-background-tertiary: #eeede8;
+  --color-background-info: #e6f1fb;
+  --color-text-primary: #1a1a18;
+  --color-text-secondary: #6b6b66;
+  --color-text-info: #0c447c;
+  --color-border-tertiary: rgba(0,0,0,0.12);
+  --color-border-secondary: rgba(0,0,0,0.22);
+  --color-border-info: #85b7eb;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); font-size: 13px; color: var(--color-text-primary); background: #f8f7f4; padding: .75rem 1rem 2rem; }
+h1 { font-size: 18px; font-weight: 500; margin-bottom: 1rem; color: var(--color-text-primary); display: flex; align-items: center; gap: 10px; }
+h1 span { font-size: 12px; font-weight: 400; color: var(--color-text-secondary); background: #e1f5ee; color: #085041; padding: 2px 8px; border-radius: 4px; }
+.app { width: 100%; margin: 0; padding: 0 .5rem; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; flex-wrap: wrap; gap: 8px; }
+.tabs { display: flex; gap: 3px; border-bottom: .5px solid var(--color-border-tertiary); flex-wrap: wrap; }
+.tab { padding: 5px 13px; font-size: 12px; border: .5px solid transparent; border-bottom: none; border-radius: 5px 5px 0 0; cursor: pointer; background: transparent; color: var(--color-text-secondary); }
+.tab.active { background: var(--color-background-primary); border-color: var(--color-border-tertiary); color: var(--color-text-primary); font-weight: 500; margin-bottom: -1px; }
+.section { display: none; } .section.active { display: block; }
+.month-sel { display: flex; align-items: center; gap: 8px; }
+.month-sel select { padding: 5px 8px; font-size: 12px; font-weight: 500; border: .5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); }
+.month-badge { font-size: 11px; color: var(--color-text-secondary); }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 7px; margin-bottom: .85rem; }
+.metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 9px 11px; }
+.metric-label { font-size: 10px; color: var(--color-text-secondary); margin-bottom: 2px; text-transform: uppercase; letter-spacing: .03em; }
+.metric-value { font-size: 20px; font-weight: 500; }
+.metric-sub { font-size: 10px; color: var(--color-text-secondary); margin-top: 1px; }
+.mv-green { color: #1D9E75; } .mv-blue { color: #185FA5; } .mv-amber { color: #BA7517; } .mv-red { color: #D85A30; }
+.pace-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 7px; margin-bottom: .85rem; }
+.pace-card { background: var(--color-background-primary); border: .5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 11px 13px; }
+.pace-title { font-size: 10px; color: var(--color-text-secondary); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .03em; }
+.pace-nums { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.pace-actual { font-size: 18px; font-weight: 500; } .pace-goal { font-size: 10px; color: var(--color-text-secondary); }
+.bar-wrap { background: var(--color-background-secondary); border-radius: 3px; height: 6px; overflow: hidden; }
+.bar { height: 6px; border-radius: 3px; }
+.rep-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 5px; margin-bottom: .85rem; }
+.rep-card { border-radius: var(--border-radius-md); padding: 8px 10px; border: .5px solid transparent; }
+.rep-name { font-size: 11px; font-weight: 500; margin-bottom: 1px; }
+.rep-stats { font-size: 10px; opacity: .85; }
+.btn { padding: 5px 12px; font-size: 12px; border: .5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-primary); cursor: pointer; }
+.btn:hover { background: var(--color-background-secondary); }
+.btn-primary { background: var(--color-background-info); color: var(--color-text-info); border-color: var(--color-border-info); }
+.btn-save { background: #E1F5EE; color: #085041; border-color: #0F6E56; }
+.form-panel { background: var(--color-background-primary); border: .5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 12px 14px; margin-bottom: .85rem; }
+.form-panel.editing { border-color: #1D9E75; background: #F7FDFB; }
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 7px; margin-bottom: 7px; }
+.fg { display: flex; flex-direction: column; gap: 2px; }
+.fg label { font-size: 10px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .03em; }
+.fg input, .fg select { padding: 6px 8px; font-size: 13px; border: .5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); }
+.form-actions { display: flex; gap: 7px; margin-top: 6px; align-items: center; flex-wrap: wrap; }
+.edit-indicator { font-size: 11px; color: #0F6E56; font-weight: 500; }
+.tbl-wrap { overflow-x: auto; border: .5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); margin-top: .6rem; max-height: 70vh; overflow-y: auto; }
+.tbl-wrap th { position: sticky; top: 0; z-index: 1; background: var(--color-background-secondary); }
+th { resize: horizontal; overflow: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { background: var(--color-background-secondary); padding: 7px 10px; text-align: left; font-weight: 500; font-size: 11px; color: var(--color-text-secondary); border-bottom: .5px solid var(--color-border-tertiary); white-space: nowrap; text-transform: uppercase; letter-spacing: .03em; }
+td { padding: 7px 10px; border-bottom: .5px solid var(--color-border-tertiary); color: var(--color-text-primary); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--color-background-secondary); }
+tr.editing-row td { background: #F0FBF7; }
+.tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.row-btn { background: none; border: none; cursor: pointer; font-size: 13px; padding: 2px 6px; border-radius: 3px; color: var(--color-text-secondary); }
+.row-btn:hover { background: var(--color-background-secondary); }
+.row-btn.edit-btn:hover { color: #185FA5; }
+.row-btn.del-btn:hover { color: #D85A30; }
+.section-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; flex-wrap: wrap; gap: 6px; }
+.section-title { font-size: 15px; font-weight: 500; }
+.filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: .75rem; align-items: center; }
+.filter-row select, .filter-row input { padding: 5px 8px; font-size: 12px; border: .5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); }
+.goal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 7px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; margin-bottom: .85rem; }
+.goal-item { display: flex; flex-direction: column; gap: 3px; }
+.goal-item label { font-size: 10px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .03em; }
+.goal-item input { padding: 5px 8px; font-size: 13px; border: .5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); }
+.cum-num { font-weight: 500; color: #185FA5; }
+.neg { color: #D85A30; } .pos { color: #1D9E75; }
+.presold-row td { background: rgba(29,158,117,0.05); }
+.goal-note { font-size: 11px; color: var(--color-text-secondary); margin-bottom: .6rem; font-style: italic; }
+.hist-note { font-size: 11px; color: var(--color-text-secondary); padding: 8px 10px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); margin-bottom: .6rem; }
+tr.dash-row { cursor: pointer; }
+tr.dash-row:hover td { background: #EEF6FF; }
+tr.dash-row.qe-active td { background: #F0FBF7; font-weight: 500; }
+tr.qe-row td { padding: 0; background: #F7FDFB; border-bottom: 2px solid #1D9E75; }
+.qe-panel { padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.qe-fg { display: flex; flex-direction: column; gap: 2px; }
+.qe-fg label { font-size: 10px; color: #0F6E56; text-transform: uppercase; letter-spacing: .04em; font-weight: 500; }
+.qe-fg input, .qe-fg select { padding: 5px 8px; font-size: 12px; border: 1px solid #5DCAA5; border-radius: 6px; background: #fff; color: #1a1a18; min-width: 90px; }
+.qe-fg input[type=number] { min-width: 80px; }
+.qe-actions { display: flex; gap: 6px; align-items: center; margin-left: 4px; }
+.qe-save { padding: 6px 14px; font-size: 12px; font-weight: 500; background: #1D9E75; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.qe-save:hover { background: #0F6E56; }
+.qe-cancel { padding: 6px 10px; font-size: 12px; background: transparent; border: 1px solid #B4B2A9; border-radius: 6px; cursor: pointer; color: #5F5E5A; }
+.qe-cancel:hover { background: #F1EFE8; }
+</style>
+</head>
+<body>
+<div class="app">
+<h1>Harvey Lexus <span id="month-badge">live</span></h1>
+
+<div class="top-bar">
+  <div class="month-sel">
+    <select id="month-picker" onchange="switchMonth(this.value)">
+      <option value="2026-04" selected>April 2026 (current)</option>
+      <option value="2026-03">March 2026</option>
+      <option value="2026-02">February 2026</option>
+      <option value="2026-01">January 2026</option>
+      <option value="2025-12">December 2025</option>
+      <option value="2025-11">November 2025</option>
+      <option value="2025-10">October 2025</option>
+      <option value="2025-09">September 2025</option>
+      <option value="2025-08">August 2025</option>
+      <option value="2025-07">July 2025</option>
+      <option value="2025-06">June 2025</option>
+      <option value="2025-05">May 2025</option>
+    </select>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+    <div class="tabs" id="main-tabs">
+      <button class="tab active" onclick="switchTab('dashboard',this)">Dashboard</button>
+      <button class="tab" onclick="switchTab('deals',this)">Deal log</button>
+      <button class="tab" onclick="switchTab('inventory',this)">Inventory</button>
+      <button class="tab" onclick="switchTab('goals',this)">Goals & pace</button>
+    </div>
+    <div style="display:flex;gap:5px;margin-left:8px;padding-bottom:1px">
+      <button class="btn" onclick="exportData()" title="Download your deal data as a backup file" style="font-size:11px;padding:3px 10px;background:#E1F5EE;color:#085041;border-color:#0F6E56">⬇ Export</button>
+      <button class="btn" onclick="document.getElementById('import-file').click()" title="Load a previously exported backup file" style="font-size:11px;padding:3px 10px">⬆ Import</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+    </div>
+  </div>
+</div>
+
+<div id="tab-dashboard" class="section active">
+  <div id="dash-metrics" class="metrics"></div>
+  <div id="dash-pace" class="pace-grid"></div>
+  <div class="section-hdr"><span class="section-title" id="dash-rep-title">Rep breakdown</span></div>
+  <div id="dash-reps" class="rep-grid"></div>
+  <div class="tbl-wrap"><table>
+    <thead id="dash-thead"><tr></tr></thead>
+    <tbody id="dash-tbody"></tbody>
+  </table></div>
+</div>
+
+<div id="tab-deals" class="section">
+  <div id="hist-banner" class="hist-note" style="display:none"></div>
+  <div id="deal-form-wrap">
+  <div class="section-hdr"><span class="section-title" id="deal-form-title">Add a deal</span></div>
+  <div class="form-panel" id="deal-form-panel">
+    <div class="form-row">
+      <div class="fg"><label>RDR date</label><input type="date" id="f-rdr"></div>
+      <div class="fg"><label>Customer</label><input type="text" id="f-cust" placeholder="Last, First"></div>
+      <div class="fg"><label>Rep</label><select id="f-rep"></select></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Model</label><select id="f-model">
+        <option value="">— select —</option>
+        <option>9411 — RX 350 Premium</option><option>9412 — RX 350+</option><option>9413 — RX 350 Luxury</option>
+        <option>9414 — RX 350h</option><option>9415 — RX 350 F Sport</option><option>9443 — RX 450h+</option>
+        <option>9451 — NX 350h Premium</option><option>9452 — NX 350h+</option><option>9453 — RX 350h Luxury</option>
+        <option>9455 — RX 350h F Sport</option><option>9458 — RX 500h</option>
+        <option>9353 — TX 350 Premium</option><option>9355 — TX 350 Luxury</option><option>9357 — TX 550h+</option><option>9360 — TX 500h</option>
+        <option>9508 — IS 350 F Sport Design</option><option>9516 — IS 350 F Sport</option>
+        <option>9606 — RZ 450e</option><option>9623 — LX 600 Luxury</option><option>9626 — LX 700h</option>
+        <option>9702 — GX 550 Premium+</option><option>9704 — GX 550 Luxury+</option><option>9706 — GX 550 Overtrail+</option>
+        <option>9733 — UX 300h</option><option>9735 — UX 300h F Sport</option>
+        <option>9834 — NX 350 AWD</option><option>9835 — NX 350 Premium</option><option>9836 — NX 350 Luxury</option>
+        <option>9844 — NX 350h</option><option>9845 — NX 350h Premium</option><option>9846 — NX 350h Luxury</option>
+        <option>9852 — NX 450h+</option><option>9855 — NX 450h+ Premium</option>
+        <option>9262 — LC 500</option><option>9902 — RZ 350e</option><option>9000 — other</option>
+      </select></div>
+      <div class="fg"><label>Stk#</label><input type="text" id="f-stk" placeholder="26RH243"></div>
+      <div class="fg"><label>VIN (last 8)</label><input type="text" id="f-vin" placeholder="SC088825"></div>
+      <div class="fg"><label>Status</label>
+        <select id="f-status"><option>Delivered</option><option>Scheduled</option><option>Unscheduled</option><option>Freight</option><option>Allocated</option><option>Trade</option><option>Outside</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Term</label><select id="f-term"><option>Finance</option><option>Cash</option><option>Lease</option><option>Outside lien</option></select></div>
+      <div class="fg"><label>Front gross ($)</label><input type="number" id="f-front" placeholder="0"></div>
+      <div class="fg"><label>Back gross ($)</label><input type="number" id="f-back" placeholder="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Trade?</label><select id="f-trade"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+      <div class="fg"><label>Del date</label><input type="date" id="f-del"></div>
+      <div class="fg"><label>ETA</label><input type="date" id="f-eta"></div>
+      <div class="fg"><label>Comments</label><input type="text" id="f-comments" placeholder="Notes..."></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" id="deal-submit-btn" onclick="submitDeal()">Add deal</button>
+      <button class="btn" onclick="cancelDealEdit()">Clear</button>
+      <span class="edit-indicator" id="deal-edit-indicator" style="display:none">Editing deal — save to update</span>
+    </div>
+  </div>
+  </div>
+  <div class="filter-row">
+    <select id="fil-status" onchange="renderDeals()"><option value="">All statuses</option><option>Delivered</option><option>Scheduled</option><option>Unscheduled</option><option>Freight</option><option>Allocated</option><option>Trade</option><option>Outside</option></select>
+    <select id="fil-rep" onchange="renderDeals()"><option value="">All reps</option></select>
+    <input type="text" id="fil-search" placeholder="Search customer / stk..." oninput="renderDeals()" style="min-width:180px">
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead id="deals-thead"><tr></tr></thead>
+    <tbody id="deals-tbody"></tbody>
+  </table></div>
+</div>
+
+<div id="tab-inventory" class="section">
+  <div class="section-hdr">
+    <span class="section-title">Inventory</span>
+    <button class="btn" onclick="toggleInvForm()">+ Add unit</button>
+  </div>
+  <div id="inv-form" style="display:none">
+    <div class="form-panel" id="inv-form-panel">
+      <div class="form-row">
+        <div class="fg"><label>Stk#</label><input type="text" id="i-stk" placeholder="26RH243"></div>
+        <div class="fg"><label>VIN (last 8)</label><input type="text" id="i-vin" placeholder="SC088825"></div>
+        <div class="fg"><label>Model</label><input type="text" id="i-model" placeholder="9452 — NX 350h+"></div>
+        <div class="fg"><label>Status</label><select id="i-status"><option>Ground</option><option>Freight</option><option>Allocated</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>ETA</label><input type="date" id="i-eta"></div>
+        <div class="fg"><label>Assigned customer</label><input type="text" id="i-cust" placeholder="Last, First"></div>
+        <div class="fg"><label>Assigned rep</label><select id="i-rep"></select></div>
+        <div class="fg"><label>Notes</label><input type="text" id="i-notes" placeholder="pre-sold, available..."></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="inv-submit-btn" onclick="submitInventory()">Add unit</button>
+        <button class="btn" onclick="cancelInvEdit()">Clear</button>
+        <span class="edit-indicator" id="inv-edit-indicator" style="display:none">Editing unit — save to update</span>
+      </div>
+    </div>
+  </div>
+  <div id="inv-summary" style="display:flex;gap:7px;margin-bottom:.75rem;flex-wrap:wrap"></div>
+  <div class="filter-row">
+    <select id="i-fil-status" onchange="renderInventory()"><option value="">All</option><option>Ground</option><option>Freight</option><option>Allocated</option></select>
+    <select id="i-fil-rep" onchange="renderInventory()"><option value="">All reps</option></select>
+    <input type="text" id="i-fil-search" placeholder="Search stk / VIN / model..." oninput="renderInventory()" style="min-width:160px">
+    <label style="font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px"><input type="checkbox" id="i-fil-presold" onchange="renderInventory()"> Pre-sold only</label>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Status</th><th>Stk#</th><th>VIN</th><th>Model</th><th>ETA</th><th>Rep</th><th>Customer</th><th>Notes</th><th></th></tr></thead>
+    <tbody id="inv-tbody"></tbody>
+  </table></div>
+</div>
+
+<div id="tab-goals" class="section">
+  <div class="section-hdr"><span class="section-title" id="goals-title">Goals & pace</span></div>
+  <p class="goal-note" id="goals-note"></p>
+  <div class="goal-grid" id="goals-grid"></div>
+  <div id="goals-pace" class="pace-grid"></div>
+</div>
+</div>
+
+<script>
+const REPS=[
+  {init:'OB',name:'Oliver Bokma',  bg:'#EEEDFE',tc:'#3C3489',bc:'#534AB7'},
+  {init:'JB',name:'Joseph Booher', bg:'#E1F5EE',tc:'#085041',bc:'#0F6E56'},
+  {init:'KM',name:'Kendra McClelland',bg:'#E6F1FB',tc:'#0C447C',bc:'#185FA5'},
+  {init:'MO',name:"Mark O'Neil",   bg:'#FAEEDA',tc:'#854F0B',bc:'#BA7517'},
+  {init:'BN',name:'Brian Nguyen',  bg:'#FBEAF0',tc:'#72243E',bc:'#993556'},
+  {init:'E$',name:'Eddy Ademovic', bg:'#EAF3DE',tc:'#27500A',bc:'#3B6D11'},
+  {init:'Deek',name:'Aaron Dekema',bg:'#FAECE7',tc:'#712B13',bc:'#993C1D'},
+  {init:'JL',name:'Jonathon Leese',bg:'#F1EFE8',tc:'#444441',bc:'#5F5E5A'},
+  {init:'NS',name:'Nicholas Snyder',bg:'#E6F1FB',tc:'#042C53',bc:'#0C447C'},
+  {init:'RS',name:'RS',bg:'#F1EFE8',tc:'#444441',bc:'#888'},
+];
+const STC={Delivered:{bg:'#2C2C2A',tc:'#D3D1C7'},Scheduled:{bg:'#1D9E75',tc:'#E1F5EE'},Unscheduled:{bg:'#D85A30',tc:'#FAECE7'},Freight:{bg:'#BA7517',tc:'#FAEEDA'},Allocated:{bg:'#185FA5',tc:'#E6F1FB'},Trade:{bg:'#BA7517',tc:'#FAEEDA'},Outside:{bg:'#534AB7',tc:'#EEEDFE'},Ground:{bg:'#EAF3DE',tc:'#3B6D11'}};
+const ISC={Ground:{bg:'#EAF3DE',tc:'#3B6D11'},Freight:{bg:'#FAEEDA',tc:'#854F0B'},Allocated:{bg:'#E6F1FB',tc:'#185FA5'}};
+function ri(x){return REPS.find(r=>r.init===x)||{init:x,name:x,bg:'#F1EFE8',tc:'#444',bc:'#888'};}
+function repTag(x){if(!x)return '';const r=ri(x);return `<span class="tag" style="background:${r.bg};color:${r.tc}">${r.init}</span>`;}
+function stTag(s){const c=STC[s]||{bg:'#D3D1C7',tc:'#2C2C2A'};return `<span class="tag" style="background:${c.bg};color:${c.tc}">${s}</span>`;}
+function fmt$(n){if(n===null||n===undefined||n==='')return '';const v=Math.round(n);return(v<0?'-$':'$')+Math.abs(v).toLocaleString();}
+function today(){return new Date().toISOString().slice(0,10);}
+function pb(a,g,c){const p=g>0?Math.min(100,Math.round(a/g*100)):0;return `<div class="bar-wrap"><div class="bar" style="width:${p}%;background:${c}"></div></div>`;}
+function nr(s){if(!s||s==='nan')return '';s=s.trim();const m={'RS':'RS','KM':'KM','BN':'BN','MO':'MO','E$':'E$','JL':'JL','JB':'JB','NS':'NS','Deek':'Deek','OB':'OB','Deek ':'Deek'};return m[s]||s;}
+function mkH(idBase,rows){return rows.map((r,i)=>({id:idBase+i,cust:r[0],rep:nr(r[1]),model:r[2],stk:r[3],rdr:r[4]||'',date:r[5]||'',status:'Delivered',term:r[6]||'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:r[7]||''}));}
+const HIST={};
+HIST['2025-05']=[{id:50001,cust:'Oconnor-Helmholt',rep:'RS',model:'9832',stk:'25nx284',rdr:'2025-05-03',date:'2025-05-01',status:'Delivered',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50002,cust:'Adusei, Samuel',rep:'BN',model:'9623',stk:'24LX609',rdr:'2025-04-30',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50003,cust:'Motwani',rep:'KM',model:'9355',stk:'25tx313',rdr:'2025-04-30',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50004,cust:'Zhang, Xueyan',rep:'RS',model:'9452',stk:'25rh320',rdr:'2025-04-30',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50005,cust:'Cheng, Jenny',rep:'RS',model:'9836',stk:'25NX325',rdr:'2025-05-06',date:'2025-05-01',status:'Delivered',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50006,cust:'Sternaman',rep:'KM',model:'9852',stk:'25nh300',rdr:'2025-04-30',date:'2025-05-06',status:'Delivered',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50007,cust:'Neuman,J',rep:'KM',model:'9357',stk:'25tx290',rdr:'2025-05-10',date:'2025-05-01',status:'Delivered',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50008,cust:'Strad',rep:'KM',model:'9451',stk:'25RH330',rdr:'2025-05-09',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50009,cust:'Wyn',rep:'MO',model:'9411',stk:'25RX332',rdr:'2025-05-09',date:'2025-05-01',status:'Delivered',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50010,cust:'Brower, Tim',rep:'E$',model:'9451',stk:'25RH331',rdr:'2025-05-12',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50011,cust:'Wilson',rep:'E$',model:'9845',stk:'2846',rdr:'2025-05-13',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50012,cust:'Reinink, Suzanne',rep:'KM',model:'9452',stk:'25RH339',rdr:'2025-05-15',date:'2025-05-06',status:'Delivered',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50013,cust:'McDonald',rep:'BN',model:'9453',stk:'25RH341',rdr:'2025-05-19',date:'2025-05-01',status:'Delivered',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50014,cust:'Nienhuis, John',rep:'E$',model:'9452',stk:'25rh267',rdr:'2025-05-15',date:'2025-05-15',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50015,cust:'Blauw, Richard',rep:'MO',model:'9702',stk:'25GX324',rdr:'2025-05-14',date:'2025-05-14',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50016,cust:'Jermstad, John',rep:'KM',model:'9852',stk:'25NH323',rdr:'2025-05-16',date:'2025-05-16',status:'Delivered',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50017,cust:'Cullen, Thomas',rep:'E$',model:'9553',stk:'25tx302',rdr:'2025-05-19',date:'2025-05-19',status:'Delivered',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50018,cust:'Kermit Sohi',rep:'KM',model:'9353',stk:'25tx369',rdr:'2025-05-19',date:'2025-05-19',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50019,cust:'Bowers',rep:'BN',model:'9705',stk:'25GX355',rdr:'2025-05-16',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50020,cust:'Moss, Dee',rep:'KM',model:'9733',stk:'25UH346',rdr:'2025-05-17',date:'2025-05-09',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50021,cust:'FOLKERT, Abigail',rep:'RS',model:'9704',stk:'25GX356',rdr:'2025-05-19',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50022,cust:'Brooks, Mark',rep:'KM',model:'9000',stk:'25es358',rdr:'2025-05-19',date:'2025-05-01',status:'Delivered',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50023,cust:'Honeymark, LLC',rep:'BN',model:'9621',stk:'25lx270',rdr:'2025-05-19',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50024,cust:'Z-Heritage PC',rep:'E$',model:'9415',stk:'25rx359',rdr:'2025-05-19',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50025,cust:'Scofield, M',rep:'KM',model:'9845',stk:'25NH363',rdr:'2025-05-19',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50026,cust:'McKenzie, Catherine',rep:'BN',model:'9846',stk:'3562',rdr:'2025-05-19',date:'2025-05-20',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50027,cust:'Rickets, Cathy',rep:'KM',model:'9411',stk:'25rx362',rdr:'2025-05-19',date:'',status:'Delivered',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50028,cust:'McClelland, K',rep:'KM',model:'9455',stk:'25RH340',rdr:'2025-05-19',date:'2025-05-19',status:'Delivered',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50029,cust:'Ha Vy Thuc',rep:'E$',model:'9458',stk:'24rh592',rdr:'2025-05-21',date:'2025-05-21',status:'Delivered',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50030,cust:'Spadafore',rep:'KM',model:'9704',stk:'25GX367',rdr:'2025-05-19',date:'2025-05-01',status:'Delivered',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50031,cust:'Daniels, Michael',rep:'BN',model:'9845',stk:'25nh345',rdr:'2025-05-23',date:'2025-05-21',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50032,cust:'Dekorn',rep:'JL',model:'9704',stk:'25gx366',rdr:'2025-05-19',date:'2025-05-01',status:'Delivered',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50033,cust:'ESCOBAR, EULALIA',rep:'KM',model:'9411',stk:'25RX360',rdr:'2025-05-27',date:'2025-05-27',status:'Delivered',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50034,cust:'Sallaz, Corrin',rep:'RS',model:'9413',stk:'25RX374',rdr:'2025-05-29',date:'2025-03-27',status:'Delivered',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50035,cust:'Davis, Amy',rep:'RS',model:'44',stk:'25RX352',rdr:'2025-05-30',date:'2025-05-29',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50036,cust:'Linscott, Michael',rep:'RS',model:'9606',stk:'25RZ258',rdr:'2025-05-30',date:'2025-05-30',status:'Delivered',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50037,cust:'Rattunde Corp',rep:'E$',model:'9353',stk:'25TX347',rdr:'2025-05-30',date:'2025-05-30',status:'Delivered',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50038,cust:'Carlen, Michael',rep:'BN',model:'9453',stk:'25RH376',rdr:'2025-05-30',date:'2025-04-25',status:'Delivered',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50039,cust:'Lyu, Simon',rep:'KM',model:'9733',stk:'25uh162',rdr:'2025-05-30',date:'2025-05-23',status:'Delivered',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50040,cust:'FSAG, LLC',rep:'E$',model:'9623',stk:'25LX377',rdr:'2025-05-31',date:'2025-05-28',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50041,cust:'Bury, Martin',rep:'MO',model:'9360',stk:'25th295',rdr:'2025-05-31',date:'2025-05-29',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:50042,cust:'Roscasco, Kimberly',rep:'E$',model:'9452',stk:'25RH380',rdr:'2025-05-31',date:'2025-05-01',status:'Delivered',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''}];
+HIST['2025-06']=mkH(60000,[['Hallifax, Kim','E$','9706','25GX338','2025-05-19','2025-05-19','Lease',''],['Anderson, Leslie Dawn','MO','9452','25RH368','2025-05-19','2025-05-30','Cash',''],['Devries, Kevin','NS','9845','25NH385','2025-06-02','2025-05-01','Lease',''],['Smith, Lanetter','BN','9411','25RX389','2025-06-02','2025-05-03','',''],['Manthiel, Tim','MO','9401','25RX388','2025-06-02','2025-05-16','',''],['Amin, Sanjay','E$','9846','25NH390','2025-06-02','2025-05-01','Cash',''],['Bradshaw, Paul','MO','9353','25TX382','2025-06-02','2025-06-02','Cash',''],['Tran, Tim','BN','9702','9004','2025-06-07','2025-05-01','',''],['SOMA, SIND','KM','9353','25TX273','2025-06-05','2025-06-04','Finance',''],['Ogilvie, Jane','MO','9411','25RX393','2025-06-10','2025-06-06','Cash',''],['Fink','KM','9411','25RX379','2025-06-11','2025-06-07','Cash',''],['Allen, Ann','KM','9411','25RX406','2025-06-13','2025-06-09','Cash',''],['Bryant, Carl','KM','9704','25GX402','2025-06-14','2025-04-24','Cash',''],['Leemaster, M','JL','9411','25RX392','2025-06-13','2025-04-04','',''],['Susterich, Tim','RS','9411','25RX386','2025-06-13','2025-06-10','Finance',''],['Olsen, Daniel','RS','9411','25RX410','2025-06-16','2025-06-16','',''],['Schluckbier, Beth','KM','9845','25NH397','2025-06-23','2025-06-19','Cash',''],['Kaleefey, Nathaniel','BN','9360','25TH384','2025-06-23','2025-06-19','Cash',''],['Thomas, Jason','KM','9360','25TH383','2025-06-23','2025-06-20','Finance',''],['Panicker, Kumar','MO','9735','25UX196','2025-06-23','2025-06-21','Finance',''],['Banta, Beth','NS','9360','25TH401','2025-06-26','2025-06-05','Cash',''],['Boyd, William','BN','9217','24RC547','2025-06-23','2025-06-23','Cash',''],['Ortiz, Evelyn','KM','9834','25NX305','2025-06-23','2025-06-20','',''],['Neuman, Patricia','KM','9411','25RX371','2025-05-30','2025-05-01','Lease',''],['Kellner, T','RS','9451','25RH408','2025-06-16','2025-03-13','',''],['Adrian, David','MO','9002','25ES344','2025-06-24','2025-06-24','Cash',''],['Lemke, Angela','BN','9704','25GX417','2025-06-24','2025-05-01','Finance',''],['Zander, Fred','NS','9000','25ES424','2025-06-26','2025-05-08','Cash',''],['Murray, Dian','KM','9835','35NX343','2025-06-28','2025-06-20','',''],['CHIRCOP, MARC','KM','9411','25RX412','2025-06-27','2025-06-19','',''],['Reed, Adam & Marissa','BN','9411','25RX411','2025-06-28','2025-06-21','',''],['Meredith, Terrance','BN','9355','25TX423','2025-06-27','2025-06-24','',''],['Granger, Pam','MO','9355','25TX426','2025-06-30','2025-06-20','',''],['Cobb, Kristen','KM','9353','25TX404','2025-06-30','2025-06-24','',''],['Jacobs, Tom','RS','9411','25RX428','2025-06-30','2025-06-26','','']]);
+HIST['2025-07']=mkH(70000,[['MCSA Grp','BN','9361','25TH431','2025-06-30','','',''],['Peska','KM','9452','25RH429','2025-06-30','','',''],['FREDERICK, APRIL','KM','9045','25EH49','2025-07-03','2025-07-03','',''],['Isaacson, Tim','E$','9353','25TX430','2025-07-12','2025-07-07','Cash',''],['Hull, Chris','MO','9623','25LX425','2025-06-30','','',''],['Phipps, Danny','KM','9453','25RH164','2025-07-10','','',''],['Bruine, Rose','KM','9452','25RH081','2025-07-12','','',''],['Boyd, Frida','KM','9453','25RH224','2025-07-12','','',''],['Gillespie, Nancy','BN','9845','25nh439','2025-07-12','','',''],['Parikh, Pratik','KM','9412','25rx434','2025-07-12','','',''],['Khanal, Bikranm','KM','9353','25TX448','2025-07-12','','',''],['CGL Corp','MO','9846','25nh460','2025-07-14','2025-05-21','',''],['Jones, Rae','RS','9846','25nh432','2025-07-14','2025-06-16','',''],['Cannaert, Eileen','KM','9836','25nx398','2025-07-14','2025-07-14','',''],['Rosloniec, Lisa','KM','9846','25NH440','2025-07-14','','',''],['Lee, Katie','KM','9835','25NX442','2025-07-14','2025-07-14','Cash',''],['Pigott, Paul','BN','9415','25RX437','2025-07-14','','Finance',''],['Ball, Brad','E$','9906','24RZ626','2025-07-14','','',''],['Batt, Benjamin','KM','9360','25TC449','2025-07-14','','',''],['Great Lakes Med Spa','RS','9411','25RX458','2025-07-19','2025-07-15','',''],['Faultless, LLC','KM','9355','25TX446','2025-07-14','','',''],['Yearack, Jaz','MO','9355','25TX328','2025-07-14','','',''],['Stone, John','E$','9217','25RX013','2025-07-14','','',''],['Keyton, Tessa','KM','9365','25TH450','2025-07-14','','',''],['Celmer, Kaitlin','KM','9735','25UH132','2025-07-24','2025-07-18','',''],['Beuker, Steven','MO','9040','25EH244','2025-07-24','','',''],['Le, Kevin','BN','9848','25NH414','2025-07-21','2025-07-19','',''],['Metcalf, Sam','KM','9411','25RX463','2025-07-24','','',''],['Kehlenbeck, Mark','BN','9002','25ES455','2025-07-24','','',''],['Neary, Travis','BN','9516','25IS467','2025-07-24','','',''],['Hoang, Tu-nhi','RS','9846','25NH422','2025-07-28','2025-07-28','Finance',''],['Uhrin, Robert','KM','9704','25GX470','2025-07-26','','',''],['Simons, Neil','KM','9706','25GX902','2025-07-26','','',''],['Milbocker, Scott','KM','9004','25ES465','2025-07-25','','',''],['Remes, Nick','BN','9353','25TX447','2025-07-25','2025-07-25','',''],['Quist, Jeff','KM','9412','25RX462','2025-07-25','2025-07-25','',''],['Fletcher, Lisa','E$','9458','25RH456','2025-07-31','','',''],['Pankratz, Kathy','MO','9846','25NH471','2025-07-29','','',''],['Bearup, Patricia','RS','9852','25RH090','2025-07-30','2025-05-27','',''],['Dozeman, Linda','RS','9704','25GX470','2025-07-29','2025-07-29','',''],['Madura, Michael','BN','9413','25RX457','2025-07-29','2025-07-28','Finance',''],['Licari, Anthony','KM','9411','25RX468','2025-07-29','2025-07-29','Lease',''],['Cotton, Brian','KM','9045','25EH454','2025-07-31','2025-07-30','Finance',''],['Brown, Linda','KM','9040','25EH298','2025-07-31','2025-07-31','','']]);
+HIST['2025-08']=mkH(80000,[['Mandwee, Habib','E$','9413','25RX038','2025-08-09','2025-07-14','Finance',''],['Kilpatrick, Kathy','KM','9411','25RX483','2025-08-02','2025-08-01','Lease',''],['Donaldson, Erick','JB','9704','25GX473','2025-07-31','2025-07-28','',''],['Almassian, Carolyn','RS','9412','25rx490','2025-08-09','','Cash',''],['Johnson, Ahn','KM','9411','25rx479','2025-08-09','','Finance',''],['Bleyenburg, Doug','KM','9355','25TX365','2025-08-09','2025-08-06','Finance',''],['Croom, Patty','RS','9852','25RH445','2025-08-09','2025-08-09','',''],['Brennock, Chris','RS','9357','25TX427','2025-08-11','2025-08-09','',''],['RHEINHARDT, Tyler','RS','9411','25RX499','2025-08-11','2025-08-09','',''],['Bouwkamp, Bob','BN','9361','25TH510','2025-08-13','2025-07-03','Lease',''],['Teklu, Esayas','KM','9361','25TH496','2025-08-13','2025-08-13','Finance',''],['Burdo, Tim','NS','9852','25RH503','2025-08-13','2025-07-21','Finance',''],['Henn, Gerald','KM','9704','25GX500','2025-08-14','2025-08-11','',''],['NEUBECKER, DEANN','KM','9353','25TX495','2025-08-14','2025-08-01','Finance',''],['BYL, JOHN','MO','9846','25NH512','2025-08-18','2025-08-02','Cash',''],['IBRAHIM, MOHAMED','BN','','25gx497','2025-08-18','2025-08-03','Lease',''],['SENGMANY, PANTON','E$','','25nx453','2025-08-18','2025-08-04','',''],['BUSSOTT, THOMAS','JB','','25rx508','2025-08-18','2025-08-05','',''],['Markovich, Elizabeth','BN','9411','25RX501','2025-08-18','2025-08-04','Finance',''],['Boersma, James','RS','9355','25RX804','2025-08-18','2025-08-01','Cash',''],['Nielson, Garr','E$','9626','25LH395','2025-08-18','2025-08-18','Cash',''],['Liu, Minjiao','KM','9820','25NX484','2025-08-21','2025-08-20','Finance',''],['Jansen, Lavern','RS','9834','25NX416','2025-08-21','2025-08-21','Finance',''],['Driver, Karen','E$','9836','25nx475','2025-08-22','2025-08-22','Lease',''],['Kloote, Elise','E$','9413','25RX493','2025-08-25','2025-08-25','Cash',''],['Warner, Don','KM','9508','25IS403','2025-08-25','2025-08-25','Finance',''],['Barbara Godra','KM','9411','25RX491','2025-08-26','2025-08-26','Finance',''],['Gustafson, John','KM','9702','25GX519','2025-08-26','2025-08-26','Lease',''],['Phan, Thuy','KM','9411','25RX498','2025-08-26','2025-08-26','Finance',''],['McLaughlin','E$','9452','25RH527','2025-08-27','2025-08-27','Cash',''],['Smith, Judy','RS','9412','25RX528','2025-08-29','2025-08-27','Cash',''],['Lau, Irene','JB','9411','25RX522','2025-08-28','2025-08-28','Lease',''],['Lawton, Sarah','KM','9361','25TH524','2025-08-28','2025-08-28','',''],['Baumanmis, Maraya','RS','9705','25GX531','2025-08-29','2025-08-01','Finance',''],['Holstege','KM','9004','25ES530','2025-09-03','2025-08-15','','']]);
+HIST['2025-09']=mkH(90000,[['Dirrenberger, Richard','RS','9453','25RH099','2025-09-02','','',''],['Veldkamp, Randall','KM','9846','26nh02','2025-09-02','2025-09-04','Cash',''],['Stuit, Libby','MO','9355','25TX405','2025-09-02','','Lease',''],['Wakeland, Michael','KM','9623','25LX513','2025-09-05','','Finance',''],['Aaron, Rob','KM','9452','25RH100','2025-09-02','','Cash',''],['Nordstrom, Helen','E$','9836','26NX01','2025-09-13','2025-09-08','Cash',''],['Martin, Ryan','JB','9704','25GX520','2025-09-02','','',''],['Fergeson, Julie','JB','9000','25es529','2025-09-08','','Finance',''],['WU, BICAI','BN','9361','25TH540','2025-09-08','','Finance',''],['Anason, Kathryn','KM','9453','25RH494','2025-08-18','','Lease',''],['Frey, Twink','JB','9453','25rh521','2025-09-02','','',''],['Dixon, Suzanne','NS','9852','25NH543','2025-09-12','','Cash',''],['Rattunde Corp','E$','9411','25RX488','2025-09-12','','Lease',''],['Koekkoek','MO','9412','25RX526','2025-09-12','2025-09-12','Lease',''],['Rispler, David','BN','9836','25NX400','2025-09-13','2025-09-13','Lease',''],['VANWIEREN','RS','9702','25GX544','2025-09-15','','Cash',''],['Hashem, Nuradean','RS','9516','25IS535','2025-09-15','2025-09-15','Finance',''],['Berlinski, Pam','BN','9846','25NH541','2025-09-15','2025-09-15','Cash',''],['Lapham, Patricia','JB','9411','25RX518','2025-09-15','2025-09-15','Cash',''],['Johnson, Lucille','JB','9836','25NX419','2025-09-15','2025-09-15','Finance',''],['Groenenboom, Steve','BN','9411','25RX546','2025-09-15','2025-09-15','Cash',''],['Okelly, Mary','RS','9486','26NH04','2025-09-15','2025-09-15','Cash',''],['Martha Reid','NS','9845','26NH05','2025-09-15','2025-09-15','Cash',''],['Wolf, July','KM','9451','25RH552','2025-09-22','2025-09-15','Cash',''],['Mikhail Salacina','BN','9004','25EH557','2025-09-25','','Cash',''],['Horvatitis','KM','9702','25GX555','2025-09-25','','Cash',''],['Powell, Kathy','MO','9413','25RX558','2025-09-26','','Lease',''],['Boertman, Mark','Deek','9413','25RX533','2025-09-26','','Finance',''],['Brandner, Michael','KM','9353','26TX03','2025-09-26','','Finance',''],['Griffin, Kelley','E$','9623','25LX562','2025-09-27','','Cash',''],['Simmons, Kim','E$','9852','25NH561','2025-09-27','','Lease',''],['Gustafson, Nicole','BN','9411','25RX549','2025-09-29','','Finance',''],['Hardy, Peggy','JB','9002','25ES556','2025-09-29','2025-09-12','Cash',''],['William Hajek','KM','9411','25RX536','2025-09-29','','Finance',''],['SINGH, HARMINDER','Deek','9355','25TX415','2025-09-29','','Lease',''],['huff, judy','E$','9845','26NH08','2025-09-30','','Cash',''],['Port City Racing','E$','9458','25RH566','2025-09-30','','Cash',''],['HARVEY LEXUS','NS','9361','26TH07','2025-09-30','','Cash',''],['GARRISON, JOHN','JL','','25LH563','2025-09-30','','Cash','']]);
+HIST['2025-10']=mkH(100000,[['Reinink, Suzanne','KM','9453','25RH564','2025-09-30','','',''],['Coy, Mike','JB','9353','25TX452','2025-09-30','','',''],['Huinter, Chris','JB','9002','25ES569','2025-09-30','','',''],['Racine, Andrew','E$','9706','25GX570','2025-09-30','','',''],['Hurley, Ronald','MO','9733','25UH451','2025-10-04','','',''],['Brown, Peter','MO','9412','25RX572','2025-10-06','','',''],['Church, Brendalee','E$','9411','25RX485','2025-10-06','','',''],['Man, Shangkai','Deek','9834','26NX11','2025-10-09','','',''],['Carlson, Mary','RS','9412','25RX573','2025-10-09','','',''],['Dye, Angelic','E$','9453','25RH574','2025-10-09','','',''],['Williams, Gaylynn','BN','9004','25ES579','2025-10-10','','',''],['Mittelstaedt','NS','9453','25RH575','2025-10-13','','',''],['Hiller, Cynthia','E$','9411','25RX551','2025-10-16','','',''],['Hayes, Carl','E$','9451','25RH583','2025-10-16','','',''],['Pitt, Elizabeth','KM','9702','25GX292','2025-10-16','','',''],['DM Leasing','Deek','9623','25LX580','2025-10-16','','',''],['Laura, Jeffrey','E$','9838','26NX15','2025-10-16','','',''],['Taylor, Laurie','KM','9835','26NX22','2025-10-16','','',''],['Nguyen, Khanh','BN','9353','25TX565','2025-10-16','','',''],['Nielsen, Sally','MO','9355','26TX09','2025-10-22','2025-10-21','',''],['Tem, Kimlun','Deek','9361','26TH23','2025-10-16','','',''],['Hill, Paul','Deek','9128','25LS357','2025-10-16','','',''],['Healey, Pam','Deek','9353','26TX25','2025-10-22','','',''],['Tyler Vanderven','BN','9413','25RX505','2025-10-22','','',''],['HARRIS, VAN ARNEZ','MO','9413','25RX547','2025-10-22','','',''],['Gilbert McDonald','JL','9004','25ES588','2025-10-22','','',''],['Gorczyca, Karla','JB','9412','25RX537','2025-10-16','','',''],['REHV, LLC','MO','9704','25GX589','2025-10-28','','',''],['Merati, Parviz','BN','9702','25GX591','2025-10-28','','',''],['Edara, Asa','KM','9452','25RH581','2025-10-16','','',''],['Pamela Courter','KM','9412','26RX28','2025-10-28','','',''],['Tran Hung','Deek','9360','25TH516','2025-10-28','','',''],['Verberg, Lisa','Deek','9411','25RX571','2025-10-28','','',''],['Van, Trang','BN','9628','25LH585','2025-10-16','','',''],['Lampen, Dan','JB','9704','25GX587','2025-10-28','','',''],['Hinman, Debbie','KM','9443','25RH586','2025-10-28','','',''],['Fraungruber, Scott','KM','9360','25TH21','2025-10-28','','',''],['Ryan Nguyen','Deek','9411','25RX576','2025-10-28','','',''],['Frizzo, Robert','KM','9453','26RH31','2025-10-29','','',''],['Wierenga, Irene','MO','9834','26NX35','2025-10-30','','',''],['Lynch, Tim','BN','9443','26RH36','2025-10-30','','',''],['Anderson, Dean/Rosalie','KM','9845','26NH33','2025-10-30','','',''],['Elizabeth Douglas','JB','9411','25RX550','2025-10-30','','',''],['Mervyn, Ryan','MO','9704','25GX590','2025-10-30','','',''],['Fitzgerald, Bills','MO','9005','25ES592','2025-10-30','','',''],['Kevin Stoll','Deek','9626','25LH514','2025-10-30','','',''],['Jaideep Motwani','KM','9835','26NX20','2025-10-30','','',''],['Michael Camarota','KM','9452','26RH34','2025-10-30','','','']]);
+HIST['2025-11']=mkH(110000,[['Thomas Cybulla','Deek','9411','25RX582','2025-10-30','','Finance',''],['Westdorp, Andrew','JB','9705','25GX584','2025-10-16','','Finance',''],['Ogden, Mark','E$','9411','26RX350','2025-11-04','2025-11-04','Finance',''],['Bays, Angela','Deek','9004','25ES593','2025-11-04','2025-10-31','Finance',''],['Dr. Asif Azeem','MO','9042','25EH568','2025-10-30','','Lease',''],['Sharon Norman','E$','9845','26NH18','2025-11-06','2025-11-04','Lease',''],['Remes, Linda','BN','9733','25uh515','2025-11-06','2025-11-06','Cash',''],['Bonk, Stanley','JB','9451','26RH39','2025-10-30','','Cash',''],['Kuiper, James','MO','9411','26RX38','2025-10-30','','Lease',''],['Goeman, Daniel','KM','9452','26RH40','2025-10-30','','Finance',''],['Turner, Megan','KM','9353','26TX10','2025-11-10','','Lease',''],['Mahealani Haegele','Deek','9508','25IS577','2025-11-07','2025-11-01','Finance',''],['Bruinsma, Ellen','JB','9836','26NX12','2025-11-13','2025-11-07','Cash',''],['Cullin, Craig','JB','9458','26rh49','2025-11-13','','Outside lien',''],['Schmidt, Terri','KM','9836','26nx27','2025-11-08','','Finance',''],['Deprekel, James','KM','9846','26NH56','2025-11-13','','Cash',''],['Rosema, Dennis','E$','9411','26RX46','2025-11-11','2025-11-11','Finance',''],['Wisniewski, Stephen','E$','9846','26NH51','2025-11-13','','Cash',''],['Herroman, Paul','KM','9453','26RH55','2025-11-13','2025-06-09','Cash',''],['Pow, Desmond','Deek','9353','26TX42','2025-11-14','2025-11-11','Finance',''],['Lipinksi, Barb','BN','9412','26RX44','2025-11-14','2025-11-03','Cash',''],['Watts, Ben','KM','9355','26TX32','2025-11-11','2025-11-11','Lease',''],['Vault/D&M Leasing','Deek','9834','26NX29','2025-11-11','2025-11-11','Cash',''],['SAMOUTHONGXAY','KM','9835','26NX41','2025-11-15','2025-11-15','Finance',''],['Chanh Nguyen','BN','9355','26TX61','2025-11-17','2025-10-31','Finance',''],['Van Dyke, Barry','JB','9852','25NH596','2025-11-17','2025-11-15','Finance',''],['Thanh Ho','JB','9834','26NX54','2025-11-24','2025-11-22','Finance',''],['Jingli Dong','BN','9353','26tx43','2025-11-25','2025-11-25','Finance',''],['Pham, James','JB','9353','26tx59','2025-11-25','2025-11-25','Finance',''],['David Nicol','KM','9451','26RH65','2025-11-26','','Finance',''],['Leese, Jordan','NS','9847','26NH71','2025-11-28','','Lease',''],['Ryan Goodman','BN','9453','26RH76','2025-11-28','','Finance',''],['Swoboda, Jim','KM','9453','26RH74','2025-11-28','','Cash',''],['Dunn, Maggie','Deek','9452','26RH67','2025-11-28','','Finance',''],['Stephen Olesak','BN','9360','26th26','2025-11-28','','Finance',''],['My-phuong Huynh','BN','9411','26RX60','2025-11-28','2025-11-19','Cash',''],['Muldoon, Katherine','KM','9704','25GX598','2025-11-28','','Lease',''],['Leslie, Andrea','KM','9855','26NH50','2025-11-29','','Lease',''],['Middleton, Allison','KM','9452','26RH69','2025-12-01','','',''],['Robart, Patricia','KM','9452','26RH64','2025-12-01','2025-07-01','Cash',''],['McCormack, Denise','Deek','9835','26NX73','2025-12-01','','Cash',''],['Snyder','NS','9455','25RH595','2025-12-01','2025-12-01','Lease','']]);
+HIST['2025-12']=mkH(120000,[['Baumgartner, Dean','BN','9452','26RH81','2025-12-01','','Cash',''],['Byoungchul Park','KM','9412','26RX72','2025-12-01','','Cash',''],['Bauer, Scott','Deek','9355','25TX523','2025-12-05','','Finance',''],['Rocky Corradin','KM','9455','26RH77','2025-12-05','','Lease',''],['Vanderploeg, Deana','BN','9452','26RH86','2025-12-08','','Finance',''],['Reinoehl, Mary','BN','9452','26RH80','2025-12-01','','Lease',''],['Dishaw, Phinele','Deek','9845','26NH87','2025-12-08','','Cash',''],['Hurley, Tammy','Deek','9355','26TX62','2025-11-17','','Cash',''],['GREGORY CHAPMAN','Deek','9705','25GX602','2025-12-09','','Finance',''],['Nguyen, Nguyet','BN','9452','26RH82','2025-12-01','','Cash',''],['Killough, Brian','JB','9353','25TX542','2025-11-17','','Cash',''],['Le, Thi','KM','9451','26RH95','2025-12-15','','Finance',''],['Marok, Ravi','E$','9705','25GX600','2025-12-15','','Cash',''],['Nguyen, Kevin/Dang, Krystal','E$','9360','26TH52','2025-12-15','','Finance',''],['Piippo, Sue','KM','9453','26RH101','2025-12-15','','Finance',''],['Lynda Ivanovic','BN','9353','26TX93','2025-12-15','','Cash',''],['DeWitt, Tim','MO','9413','26RX94','2025-12-15','','Cash',''],['Kahn, Andrea','E$','9411','26RX102','2025-12-15','','Lease',''],['Natalya Belaya','KM','9453','26RH105','2025-12-20','2025-12-19','Finance',''],['Smith, Darren','Deek','9353','26TX109','2025-12-20','2025-12-19','Lease',''],['Diane Turnwall','KM','9836','26NX48','2025-12-20','2025-12-19','Finance',''],['Krishna','KM','9845','26NH116','2025-12-20','2025-12-11','Finance',''],['Speed, Tyler','JB','9455','26RH99','2025-12-15','2025-11-11','Finance',''],['Duffield, William','NS','9443','26RH104','2025-12-15','2025-10-29','Cash',''],['Pomaranski, Jim','KM','9453','26RH117','2025-12-22','','Cash',''],['Dawn Bromley','JB','9411','26RX78','2025-12-22','2025-12-18','Finance',''],['Allen, Margret','KM','9845','26NH118','2025-12-23','','Cash',''],['Blauwkamp','Deek','9412','26RX123','2025-12-23','','Finance',''],['Tappio','KM','9353','26TX124','2025-12-23','','Finance',''],['Shaikh, Jasminka','Deek','9355','26TX110','2025-12-26','','Cash',''],['SALADINO, RONALD','Deek','9415','26RX88','2025-12-26','','Finance',''],['Fabaz, Tony','MO','9451','26RH134','2025-12-26','','Cash',''],['Kevin Nguyen','E$','9835','26NX128','2025-12-27','2025-12-19','Finance',''],['ZHU, PENGYE','E$','9411','26RX107','2025-12-29','2025-12-29','Finance',''],['Jordan Craig','E$','9733','25UH604','2025-12-29','2025-12-27','Lease',''],['Delvin, Barb','KM','9451','26RH127','2025-12-30','','Cash',''],['Meulenbelt','KM','9411','26RX133','2025-12-31','','Finance',''],['Edward Bardelli','E$','9443','26rh150','2025-12-31','2025-12-30','Lease','']]);
+HIST['2026-01']=mkH(130000,[['Jenny Ketelaar','E$','9413','26RX108','2026-01-02','','Cash',''],['Nelson, David','E$','9361','26th151','2026-01-02','','Cash',''],['Shook, Zia','BN','9351','26RH152','2026-01-02','','Cash',''],['Farooq, M','Deek','9353','26TX148','2026-01-02','','Finance',''],['Ku, Bobbiesee','Deek','9845','26NH153','2026-01-02','','Lease',''],['Jeanine Sepanik','Deek','9453','26RH149','2026-01-02','','Outside lien',''],['Williams, Mary Sue','BN','9451','26RH138','2026-01-02','','Cash',''],['Henry, Ron','Deek','9411','26RX85','2026-01-08','','Cash',''],['Orr, Chris','KM','9002','25ES560','2026-01-08','2026-01-05','Cash',''],['Rendon, Renzo','JB','9733','26RX114','2026-01-08','','Finance',''],['Cross, Kathy','BN','9411','26RX89','2026-01-09','2026-01-06','Cash',''],['Janet Feikema','BN','9516','25IS608','2026-01-12','2026-01-09','Finance',''],['Steele, Marcia','E$','9451','26RH160','2026-01-13','','Cash',''],['Link, Char','MO','9458','26RH159','2026-01-13','','Cash',''],['Timothy Emerick','JB','9706','26GX157','2026-01-13','','Cash',''],['Koduah, Andrew','JB','9623','26LX166','2026-01-13','','Finance',''],['Teresa Deau','MO','9411','26RX167','2026-01-13','','Cash',''],['Thomas Phelps Trust','JB','9355','26TX119','2026-01-13','','Cash',''],['Frye, John','Deek','9706','26GX156','2026-01-13','','Cash',''],['Lane, Kathleen','KM','9411','26RX165','2026-01-13','','Finance',''],['Shoenborn, Joshua','KM','9706','26GX155','2026-01-13','','Cash',''],['Satterlund, Hanna','KM','9706','25GX605','2026-01-13','','Lease',''],['Reinert, Dave','NS','9353','26tx173','2026-01-19','','Cash',''],['Palazoo, Jaye','Deek','9458','26RH169','2026-01-22','','Cash',''],['Truman, Michael','MO','9353','26TX178','2026-01-22','','Finance',''],['Anonini, Dawn','BN','9355','26TX171','2026-01-22','','Cash',''],['Kersman, Diane','BN','9002','25es601','2026-01-22','','Cash',''],['Lagerman, Brittany','JB','9360','26th146','2026-01-22','','Cash',''],['Sundar, Swetha','E$','9451','26RH184','2026-01-24','','Cash',''],['Little, Carol','JB','9835','26NX176','2026-01-24','','Cash',''],['Nickel, Kelly','JB','9836','26NX179','2026-01-26','','Finance',''],['Edward Heerema','KM','9852','26NH174','2026-01-26','','Cash',''],['Schoof, William','Deek','9706','26GX191','2026-01-30','','Finance',''],['Quinn Tran','E$','9412','26RX201','2026-01-30','','Finance',''],['Oldenburg, Mark','KM','9453','26RH198','2026-01-30','','Cash',''],['HARVEY LEXUS','NS','9623','25LX609','2026-01-29','','Cash',''],['Norma Stegenga-Kapteyn','MO','9844','26NH182','2026-01-30','','Cash',''],['Bachar Hazim','Deek','9413','26rx98','2026-01-31','','Finance',''],['Sopiarz, Mary','JB','9452','26RH190','2026-01-31','','Cash',''],['Muallem, Suhair','KM','9452','26RH194','2026-01-31','','Cash',''],['Boua Panavong','BN','9415','26RX177','2026-01-29','','Finance','']]);
+HIST['2026-02']=[{id:200001,cust:'Leese, Jonathon',rep:'NS',model:'9702',stk:'26GX204',rdr:'2026-02-02',date:'',status:'Delivered',term:'Lease',front:-5539,back:1006,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:'lease turn in'},{id:200002,cust:'Muldoon, Matthew',rep:'KM',model:'9702',stk:'26GX158',rdr:'2026-02-02',date:'',status:'Delivered',term:'Cash',front:6035,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200003,cust:'Norton, Kacey',rep:'BN',model:'9702',stk:'26gx202',rdr:'2026-02-02',date:'',status:'Delivered',term:'Finance',front:5106,back:1259,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200004,cust:'Vandenbroeck, Roland',rep:'JB',model:'9704',stk:'26GX183',rdr:'2026-02-02',date:'',status:'Delivered',term:'Cash',front:5877,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:'FEDEX'},{id:200005,cust:'Jollie, Allen',rep:'KM',model:'9453',stk:'26RH200',rdr:'2026-02-02',date:'',status:'Delivered',term:'Cash',front:1266,back:0,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:''},{id:200006,cust:'Canan, Megan',rep:'BN',model:'9360',stk:'26TH206',rdr:'2026-02-03',date:'',status:'Delivered',term:'Cash',front:3237,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200007,cust:'Wadel, Jessica',rep:'KM',model:'9452',stk:'26RH164',rdr:'2026-02-04',date:'',status:'Delivered',term:'Cash',front:1687,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200008,cust:'Ruth Stewart',rep:'BN',model:'9355',stk:'26TX205',rdr:'2026-02-09',date:'',status:'Delivered',term:'Finance',front:-120,back:5094,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200009,cust:'Bevier, Tyler',rep:'BN',model:'9705',stk:'25GX213',rdr:'2026-02-09',date:'',status:'Delivered',term:'Finance',front:5167,back:1180,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200010,cust:'Lombard, Lisa',rep:'E$',model:'9852',stk:'26NH111',rdr:'2026-02-14',date:'',status:'Delivered',term:'Service',front:-805,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200011,cust:'COHEN, SHALOM',rep:'Deek',model:'9557',stk:'25IS612',rdr:'2026-02-16',date:'',status:'Delivered',term:'Cash',front:2589,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200012,cust:'Nhem, Seven',rep:'Deek',model:'9510',stk:'25IS613',rdr:'2026-02-16',date:'',status:'Delivered',term:'Finance',front:3841,back:856,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200013,cust:'Vandegrift, Mark',rep:'Deek',model:'9452',stk:'26RH211',rdr:'2026-02-16',date:'',status:'Delivered',term:'Finance',front:2360,back:600,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:'pushed 2/14'},{id:200014,cust:'Allan, Nate',rep:'KM',model:'9411',stk:'26RX216',rdr:'2026-02-11',date:'',status:'Delivered',term:'Finance',front:1640,back:2888,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200015,cust:'Krupp, David',rep:'MO',model:'9412',stk:'26RX209',rdr:'2026-02-16',date:'',status:'Delivered',term:'Cash',front:2095,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200016,cust:'John Leppien',rep:'E$',model:'9126',stk:'26LS212',rdr:'2026-02-16',date:'',status:'Delivered',term:'',front:6683,back:2052,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:''},{id:200017,cust:'Bossenbroek',rep:'JL',model:'9623',stk:'26LX221',rdr:'2026-02-16',date:'',status:'Delivered',term:'Cash',front:7395,back:0,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:'pushed 2/19'},{id:200018,cust:'Lee, Erik',rep:'JB',model:'9702',stk:'26GX234',rdr:'2026-02-16',date:'',status:'Delivered',term:'Cash',front:5111,back:1813,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:''},{id:200019,cust:'Lien, Betty',rep:'BN',model:'9845',stk:'26NH237',rdr:'2026-02-21',date:'',status:'Delivered',term:'Cash',front:2549,back:0,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:''},{id:200020,cust:'Ho, David',rep:'BN',model:'9412',stk:'26RX229',rdr:'2026-02-20',date:'',status:'Delivered',term:'Finance',front:2548,back:1604,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200021,cust:'GODEAU, ALAIN',rep:'BN',model:'9852',stk:'26NH181',rdr:'2026-02-14',date:'',status:'Delivered',term:'Lease',front:1398,back:3346,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200022,cust:'WESTERHUIS, JAMES',rep:'MO',model:'9413',stk:'26RX197',rdr:'2026-02-14',date:'',status:'Delivered',term:'Cash',front:-4,back:0,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:''},{id:200023,cust:'Ed Lake',rep:'E$',model:'9443',stk:'26RH228',rdr:'2026-02-16',date:'',status:'Delivered',term:'Finance',front:4790,back:1052,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:''},{id:200024,cust:'Kaley Nguyen',rep:'MO',model:'9360',stk:'26TH218',rdr:'2026-02-21',date:'',status:'Delivered',term:'Finance',front:2412,back:3027,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200025,cust:'Dickenson, Sharon',rep:'JB',model:'9412',stk:'26RX236',rdr:'2026-02-21',date:'',status:'Delivered',term:'Finance',front:3423,back:856,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:'pushed 2/19'},{id:200026,cust:'OGOLLA, ROSE',rep:'Deek',model:'9360',stk:'26TH217',rdr:'2026-02-21',date:'',status:'Delivered',term:'Lease',front:3870,back:4435,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:'SPOT!'},{id:200027,cust:'Latrice Knight',rep:'BN',model:'9412',stk:'26RX238',rdr:'2026-02-23',date:'',status:'Delivered',term:'Cash',front:1535,back:748,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200028,cust:'Robert Korte',rep:'E$',model:'9355',stk:'26TX192',rdr:'2026-02-23',date:'',status:'Delivered',term:'Finance',front:3681,back:3944,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:'SPOT!'},{id:200029,cust:'Nelson, Connie',rep:'KM',model:'9844',stk:'26NH231',rdr:'2026-02-26',date:'',status:'Delivered',term:'Lease',front:1164,back:600,bonus:0,trade:'Yes',del:'',eta:'',vin:'',comments:''},{id:200030,cust:'Katie Back',rep:'Deek',model:'9415',stk:'26RX177',rdr:'2026-02-16',date:'',status:'Delivered',term:'Lease',front:-2513,back:600,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200031,cust:'Senagore, A',rep:'Deek',model:'9458',stk:'26RH240',rdr:'2026-02-27',date:'',status:'Delivered',term:'Cash',front:4518,back:0,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:'cash'},{id:200032,cust:'Mark Zabloudil',rep:'NS',model:'9706',stk:'26GX244',rdr:'2026-02-27',date:'',status:'Delivered',term:'Finance',front:390,back:3171,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200033,cust:'Claude Segard',rep:'MO',model:'9906',stk:'26rz122',rdr:'2026-02-27',date:'',status:'Delivered',term:'Finance',front:190,back:643,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:''},{id:200034,cust:'Tim Higgins',rep:'KM',model:'9411',stk:'26RX100',rdr:'2026-02-28',date:'',status:'Delivered',term:'Lease',front:105,back:950,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:'SPOT!!!'},{id:200035,cust:'Matthew Sierawski',rep:'KM',model:'9353',stk:'26TX244',rdr:'2026-02-28',date:'',status:'Delivered',term:'Finance',front:1450,back:656,bonus:0,trade:'No',del:'',eta:'',vin:'',comments:'SPOT!!'}];
+const APRIL_SEED=[
+{id:1776718572287,date:'2026-04-20',rdr:'',cust:'Green-Backus, Am',rep:'KM',model:'9355',stk:'26TX277',vin:'5TDAAAB61TS073257',status:'Delivered',term:'Finance',front:1501,back:3163,bonus:0,trade:'Yes',del:'2026-04-18',eta:'',comments:'SPOT!'},
+{id:'1775518205073',date:'2026-04-06',rdr:'2026-04-07',cust:'Crake, Melissa',rep:'BN',model:'9411',stk:'26RX294',vin:'2T2BAMCA7TC143857',status:'Delivered',term:'Lease',front:1249,back:904,bonus:'0',trade:'Yes',del:'2026-04-06',eta:'',comments:''},
+{id:'1774907405128',date:'2026-03-30',rdr:'2026-03-30',cust:'Elliott, Grant',rep:'Deek',model:'9845',stk:'26NH284',vin:'2T2GKCEZ5TC070407',status:'Delivered',term:'Lease',front:3565,back:2647,bonus:'0',trade:'No',del:'2026-04-24',eta:'',comments:'',rdrPrev:'0'},
+{id:'1774907243618',date:'2026-03-30',rdr:'2026-03-30',cust:'Rosenburg, Wes',rep:'Deek',model:'9845',stk:'26NH291',vin:'2T2GKCEZ8TC070899',status:'Delivered',term:'Lease',front:3008,back:1697,bonus:'0',trade:'No',del:'2026-04-03',eta:'',comments:'',rdrPrev:'0'},
+{id:'1776461008',date:'2026-03-30',rdr:'2026-03-30',cust:'Poggi, Michael',rep:'BN',model:'9451',stk:'26RH292',vin:'2TC132035',status:'Delivered',term:'Finance',front:3316,back:3969,bonus:'0',trade:'No',del:'2026-04-16',eta:'',comments:'',rdrPrev:'0'},
+{id:'1774904993100',date:'2026-03-30',rdr:'2026-03-30',cust:'Obaji, Rola',rep:'Deek',model:'9702',stk:'26GX281',vin:'JTJTBCDX6T5081378',status:'Delivered',term:'Finance',front:5293,back:443,bonus:'0',trade:'No',del:'2026-04-03',eta:'',comments:'later',rdrPrev:'0'},
+{id:'1774614059692',date:'2026-03-31',rdr:'2026-03-31',cust:'Crow, Clinton',rep:'E$',model:'9453',stk:'26RH295',vin:'2T2BBMCA2TC130737',status:'Delivered',term:'Finance',front:1090,back:250,bonus:'0',trade:'Yes',del:'2026-04-03',eta:'',comments:'',rdrPrev:'0'},
+{id:'2',date:'2026-04-06',rdr:'2026-04-06',cust:'Watson, Susan',rep:'KM',model:'9845',stk:'26NH306',vin:'C12A798',status:'Delivered',term:'Finance',front:2199,back:800,bonus:'0',trade:'No',del:'2026-04-03',eta:'',comments:'26NH306'},
+{id:'3',date:'2026-04-10',rdr:'2026-04-10',cust:'Myers, Linda',rep:'MO',model:'9845',stk:'26NH290',vin:'JTJGKCEZ5T2078328',status:'Delivered',term:'Finance',front:4233,back:608,bonus:'0',trade:'No',del:'2026-04-10',eta:'',comments:'',rdrPrev:0},
+{id:'1776461002',date:'2026-03-16',rdr:'2026-03-16',cust:'Knapp, Deborah',rep:'KM',model:'9455',stk:'26RH254',vin:'3TC129130',status:'Delivered',term:'Finance',front:3245,back:5374,bonus:'0',trade:'No',del:'2026-04-13',eta:'',comments:'',rdrPrev:'0'},
+{id:'49',date:'',rdr:'2026-04-15',cust:'Blais, Steve',rep:'Deek',model:'9706',stk:'26GX309',vin:'8T5082662',status:'Delivered',term:'Finance',front:6037,back:0,bonus:'0',trade:'No',del:'2026-04-07',eta:'',comments:''},
+{id:'51',date:'2026-04-06',rdr:'2026-04-06',cust:'Middleton, Gary',rep:'KM',model:'9845',stk:'26NH305',vin:'8TC12A463',status:'Delivered',term:'Finance',front:2196,back:1996,bonus:'0',trade:'No',del:'2026-04-04',eta:'',comments:''},
+{id:'52',date:'',rdr:'2026-04-07',cust:'Wilson, Ronald',rep:'Deek',model:'9412',stk:'26RX304',vin:'5TC12C753',status:'Delivered',term:'Finance',front:4547,back:2392,bonus:'0',trade:'No',del:'2026-04-07',eta:'',comments:''},
+{id:'53',date:'',rdr:'',cust:'Rex, Bill & Sarah',rep:'Deek',model:'9453',stk:'26RH336',vin:'7TC133911',status:'Delivered',term:'Finance',front:4743,back:1878,bonus:'0',trade:'Yes',del:'2026-04-20',eta:'',comments:''},
+{id:'60',date:'',rdr:'',cust:'Gwynn, Ti.',rep:'Deek',model:'9458F',stk:'26RH349',vin:'TC025625',status:'Freight',term:'',front:'0',back:'0',bonus:'0',trade:'No',del:'',eta:'2026-04-28',comments:''},
+{id:'61',date:'',rdr:'',cust:'Salisbury',rep:'Deek',model:'9704F',stk:'',vin:'0T5084172',status:'Freight',term:'',front:'0',back:'0',bonus:'0',trade:'No',del:'',eta:'2026-05-01',comments:''},
+{id:'62',date:'',rdr:'',cust:'Brown, Kim',rep:'JB',model:'9735F',stk:'26UH344',vin:'1T2017220',status:'Delivered',term:'Cash',front:-408,back:413,bonus:'0',trade:'No',del:'2026-04-25',eta:'',comments:'sat 10am'},
+{id:'8',date:'',rdr:'2026-03-30',cust:'Horton, Jeremy',rep:'KM',model:'9706',stk:'26GX296',vin:'T5081713',status:'Delivered',term:'Finance',front:5982,back:1000,bonus:'0',trade:'No',del:'2026-04-10',eta:'',comments:'3/23',rdrPrev:'0'},
+{id:'1775071000003',date:'2026-03-31',rdr:'2026-03-31',cust:'Thomas, PJ',rep:'KM',model:'9845',stk:'26NH298',vin:'TC070486',status:'Delivered',term:'Finance',front:2449,back:0,bonus:'0',trade:'No',del:'2026-04-06',eta:'',comments:'Saturday 4/4',rdrPrev:'0'},
+{id:'1776461010',date:'2026-04-08',rdr:'2026-04-10',cust:'Rosenburg, Wes',rep:'Deek',model:'9451',stk:'26RH303',vin:'8TC133545',status:'Delivered',term:'Finance',front:3545,back:1728,bonus:0,trade:'No',del:'2026-04-08',eta:'',comments:'2nd deal'},
+{id:'1775857000002',date:'2026-04-08',rdr:'2026-04-10',cust:'Katzman, Gary',rep:'Deek',model:'9846',stk:'26NH314',vin:'8T2078120',status:'Delivered',term:'Finance',front:2449,back:0,bonus:0,trade:'No',del:'2026-04-08',eta:'',comments:''},
+{id:'1776461001',cust:'Auty, Connie',rep:'MO',model:'9516',stk:'26IS311',vin:'T5045828',status:'Delivered',term:'Finance',front:3310,back:3210,del:'2026-04-13',rdr:'2026-04-13',eta:'',comments:''},
+{id:'1776461003',cust:'Vannak, Eap',rep:'E$',model:'9835',stk:'26NX318',vin:'Z5TC114195',status:'Delivered',term:'Finance',front:1691,back:656,del:'2026-04-13',rdr:'2026-04-13',eta:'',comments:''},
+{id:'1776461004',cust:'Martin, Stephen',rep:'KM',model:'9845',stk:'26NH320',vin:'4TC072066',status:'Delivered',term:'Finance',front:1425,back:296,del:'2026-04-15',rdr:'2026-04-15',eta:'',comments:''},
+{id:'1776461005',cust:'Natura Architectural Consulting',rep:'KM',model:'9451',stk:'26RH329',vin:'7TC134914',status:'Delivered',term:'Finance',front:3053,back:5462,del:'2026-04-15',rdr:'2026-04-15',eta:'',comments:'Gillette, Tammy Layle'},
+{id:'1776461006',cust:'Southwinds Restaurants',rep:'KM',model:'9623',stk:'26LX326',vin:'6T4095393',status:'Delivered',term:'Finance',front:8321,back:0,del:'2026-04-16',rdr:'2026-04-15',eta:'',comments:''},
+{id:'1776461007',cust:'Palace, Nate',rep:'OB',model:'9508',stk:'26IS333',vin:'9T5046298',status:'Delivered',term:'Finance',front:-1767,back:316,del:'2026-04-16',rdr:'2026-04-15',eta:'',comments:''},
+{id:'1776461009',cust:'Boyd, Kristin',rep:'NS',model:'9733',stk:'26UH313',vin:'1T2017220',status:'Delivered',term:'Cash',front:1927,back:3065,del:'2026-04-17',rdr:'2026-04-17',eta:'',comments:''},
+{id:'1776461011',cust:'Albery, John/Linda',rep:'Deek',model:'9852',stk:'26NH301',vin:'5T2089526',status:'Scheduled',term:'Finance',front:0,back:0,del:'',rdr:'2026-04-15',eta:'2026-04-15',comments:'pre-punched'},
+{id:'1776461020',cust:'Carlson, Diane',rep:'NS',model:'9844',stk:'26NH308',vin:'6TC071295',status:'Delivered',term:'Finance',front:-1210,back:0,del:'2026-04-24',rdr:'',eta:'',comments:'friday 10am',date:'',trade:'No'},
+{id:'1776461021',cust:'Sportel, Nathan',rep:'JB',model:'9906',stk:'26RZ312',vin:'TA005486',status:'Delivered',term:'Lease',front:953,back:600,del:'2026-04-18',rdr:'2026-04-18',eta:'',comments:'',date:'2026-04-18',trade:'Yes',bonus:0},
+{id:'1776461022',cust:'Nicholson, Adam',rep:'Deek',model:'9845',stk:'26NH322',vin:'4TC071841',status:'Delivered',term:'Cash',front:2967,back:0,del:'2026-04-20',rdr:'',eta:'',comments:'',date:'',trade:'No'},
+{id:'1776461023',cust:'Miller, Margaret',rep:'MO',model:'9355',stk:'26TX338',vin:'0TS076778',status:'Delivered',term:'Finance',front:6402,back:1152,del:'2026-04-21',rdr:'',eta:'',comments:''},
+{id:'1776461024',cust:'Specter, Marc',rep:'NS',model:'9355',stk:'26TX337',vin:'0TS076764',status:'Unscheduled',term:'Finance',front:0,back:0,del:'',rdr:'',eta:'2026-04-17',comments:''},
+{id:'1776461030',cust:'Miller, Claudia',rep:'BN',model:'9412',stk:'26RX340',vin:'2TC146133',status:'Delivered',term:'Finance',front:1631,back:0,del:'2026-04-21',rdr:'2026-04-23',eta:'',comments:'CM:04/16',date:'',trade:'No'},
+{id:'1776461031',cust:'Huges, Holly',rep:'KM',model:'9452',stk:'26RH343',vin:'8TC135764',status:'Delivered',term:'Cash',front:2619,back:1296,del:'2026-04-24',rdr:'',eta:'',comments:'11:30',date:'',trade:'No'},
+{id:'1776461032',cust:'Inman, Shirley',rep:'JL',model:'9413',stk:'26RX341',vin:'9TC146324',status:'Delivered',term:'Finance',front:3188,back:1152,del:'2026-04-27',rdr:'2026-04-27',eta:'',comments:'',date:'',trade:'No'},
+{id:'1776461033',cust:'Crypto Car Rental',rep:'Deek',model:'9706',stk:'',vin:'T5084499',status:'Freight',term:'Finance',front:0,back:0,del:'',rdr:'',eta:'2026-05-01',comments:'LK:04/21'},
+{id:'1776461040',cust:'Boweles, V',rep:'KM',model:'9835',stk:'',vin:'9T2031773',status:'Freight',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-01',comments:'LK:04/21'},
+{id:'1776461041',cust:'Leese, John',rep:'NS',model:'9262',stk:'',vin:'4TA112969',status:'Freight',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-02',comments:'LK:04/22'},
+{id:'1776465001',cust:'Borrello-Smith, Cynthia',rep:'Deek',model:'9455',stk:'26RH334',vin:'3TC129130',status:'Delivered',term:'Lease',front:2989,back:1649,bonus:0,trade:'Yes',del:'2026-04-18',rdr:'2026-04-15',eta:'',comments:'',date:'2026-04-15'},
+{id:'1777047001',cust:'Davis, Kenneth',rep:'BN',model:'9353',stk:'26TX350',vin:'',status:'Delivered',term:'Finance',front:1820,back:656,bonus:0,trade:'No',del:'2026-04-24',rdr:'',eta:'',comments:''},
+{id:'1777047010',cust:'Zimmer, David',rep:'KM',model:'9902',stk:'',vin:'TA006023',status:'Freight',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-02',comments:''},
+{id:'1777047011',cust:'Eaton, Ron and Deb',rep:'NS',model:'9443',stk:'',vin:'T2045502',status:'Freight',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-11',comments:''},
+{id:'1777047012',cust:'Gokey, Lindsey',rep:'E$',model:'9704',stk:'',vin:'XT5085751',status:'Freight',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-22',comments:''},
+{id:'1777047013',cust:'Nguyen, Thang',rep:'BN',model:'9452',stk:'',vin:'1TC137503',status:'Freight',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-06',comments:''},
+{id:'1777047002',cust:'Nguyen, John',rep:'BN',model:'9353',stk:'26TH327',vin:'',status:'Delivered',term:'Finance',front:3755,back:3866,bonus:0,trade:'No',del:'2026-04-21',rdr:'2026-04-23',eta:'',comments:''},
+{id:'17771248',cust:'Dreiband, Barbara',rep:'Deek',model:'9451',stk:'26RH330',vin:'',status:'Delivered',term:'Finance',front:2670,back:411,bonus:0,trade:'No',del:'2026-04-24',rdr:'',eta:'',comments:''},
+{id:'177714649',cust:'Sharmeen, Reffat',rep:'Deek',model:'9353',stk:'26TH120',vin:'',status:'Delivered',term:'Finance',front:-452,back:892,bonus:0,trade:'No',del:'2026-04-20',rdr:'2026-04-27',eta:'',comments:''},
+{id:'177714650',cust:'Dahiya, Ritu',rep:'NS',model:'9411',stk:'26RX302',vin:'',status:'Delivered',term:'Finance',front:-3799,back:1548,bonus:0,trade:'No',del:'2026-04-25',rdr:'',eta:'',comments:''},
+{id:'177714651',cust:'Trevino, Ruben',rep:'Deek',model:'9411',stk:'26RX345',vin:'',status:'Delivered',term:'Finance',front:5,back:1582,bonus:0,trade:'No',del:'2026-04-25',rdr:'',eta:'',comments:''},
+{id:'1777311001',cust:'Smendik, Amy',rep:'KM',model:'9508',stk:'26IS346',vin:'0T5046710',status:'Delivered',term:'Finance',front:2016,back:150,bonus:0,trade:'No',del:'2026-04-27',rdr:'',eta:'',comments:''},
+{id:'1777311002',cust:'Koziara, Mi',rep:'E$',model:'9353',stk:'26TX339',vin:'3TS077939',status:'Unscheduled',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'',comments:''},
+{id:'1777311003',cust:'Mack, Heather',rep:'JB',model:'9415',stk:'26RX307',vin:'XTC144503',status:'Unscheduled',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'',comments:''},
+{id:'1777311004',cust:'Rattunde (Corporate)',rep:'E$',model:'9451',stk:'',vin:'2T2BBMCA9TC134476',status:'Unscheduled',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'',comments:'Corporate deal'},
+{id:'17773156',cust:'Kessler, Nathan',rep:'Deek',model:'9704',stk:'',vin:'8T5084713',status:'Freight',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-05',comments:''},
+{id:'17773157',cust:'Sowa, S',rep:'NS',model:'9845',stk:'',vin:'7TC073566',status:'Freight',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-01',comments:''},
+{id:'177731A58',cust:'Dermody, L',rep:'KM',model:'9451F',stk:'',vin:'0TC17C604',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-13',comments:''},
+{id:'177731A59',cust:'Case, Bridget',rep:'BN',model:'9452H',stk:'',vin:'7TC18B381',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-20',comments:''},
+{id:'177731A60',cust:'Bennington',rep:'E$',model:'9846H',stk:'',vin:'8TC18A957',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-21',comments:''},
+{id:'177731A61',cust:'Brown, Sc',rep:'Deek',model:'9452H',stk:'',vin:'7TC18D549',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-26',comments:''},
+{id:'177731A62',cust:'Stutzman',rep:'KM',model:'9412H',stk:'',vin:'TC19C483',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-30',comments:''},
+{id:'177731A63',cust:'Monroe',rep:'Deek',model:'9361H',stk:'',vin:'XTS19K065',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-04',comments:''},
+{id:'177731A64',cust:'Dekema',rep:'Deek',model:'9365H',stk:'',vin:'6TS19K527',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-05',comments:''},
+{id:'177731A65',cust:'Ridley, Mark',rep:'KM',model:'9453H',stk:'',vin:'5TC21D096',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-14',comments:''},
+{id:'177731A66',cust:'Kelderman',rep:'MO',model:'9361H',stk:'',vin:'7TS21H105',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-16',comments:''},
+{id:'177731A67',cust:'Connie and...',rep:'JB',model:'9443F',stk:'',vin:'1T2046877',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-18',comments:''},
+{id:'177731A68',cust:'Tolcida, Dan',rep:'E$',model:'9704F',stk:'',vin:'1T5087727',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-18',comments:''},
+{id:'177731A69',cust:'Ponko, Dar',rep:'BN',model:'9845H',stk:'',vin:'T2083244',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-18',comments:''},
+{id:'177731A70',cust:'Parawitz',rep:'BN',model:'9702F',stk:'',vin:'T5087976',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-07-04',comments:''},
+{id:'177731A71',cust:'Peters, Julie',rep:'KM',model:'9355H',stk:'',vin:'7TS18H767',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-11',comments:''},
+{id:'177731A72',cust:'Selig, Larry',rep:'E$',model:'9353H',stk:'',vin:'5TS201650',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-05-25',comments:''},
+{id:'177731A73',cust:'Howe/SPO',rep:'JB',model:'9260H',stk:'',vin:'0TAT13076',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-09',comments:''},
+{id:'177731A74',cust:'Cummin',rep:'Deek',model:'9626F',stk:'',vin:'1T4016928',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-09',comments:''},
+{id:'177731A75',cust:'Oosterbaan',rep:'KM',model:'9702F',stk:'',vin:'5086433',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-09',comments:''},
+{id:'177731A76',cust:'Foltz, Dana',rep:'Deek',model:'9705F',stk:'',vin:'5086383',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',rdr:'',eta:'2026-06-09',comments:''}
+];
+const MARCH_SEED=[
+{id:1774993020497,date:'2026-03-31',rdr:'2026-03-31',cust:'Lynam, Lee',rep:'E$',model:'9443',stk:'26RH232',vin:'JTJCJMGA1T2042442',status:'Delivered',term:'Finance',front:-3290,back:806,bonus:0,trade:'Yes',del:'2026-03-31',eta:'',comments:''},
+{id:1774907405128,date:'2026-03-30',rdr:'2026-03-30',cust:'Elliott, Grant',rep:'Deek',model:'',stk:'26NH284',vin:'2T2GKCEZ5TC070407',status:'Unscheduled',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',comments:'',rdrPrev:0},
+{id:1774907243618,date:'2026-03-30',rdr:'2026-03-30',cust:'Rosenburg, Wes',rep:'Deek',model:'',stk:'26NH291',vin:'2T2GKCEZ8TC070899',status:'Scheduled',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'2026-04-03',eta:'',comments:'',rdrPrev:0},
+{id:1774907092464,date:'2026-03-30',rdr:'2026-03-30',cust:'Pietsch, John',rep:'Deek',model:'',stk:'26RX239',vin:'2T2BAMCA4TC140107',status:'Delivered',term:'Cash',front:1678,back:656,bonus:0,trade:'No',del:'2026-03-31',eta:'',comments:''},
+{id:1774906431558,date:'2026-03-30',rdr:'2026-03-30',cust:'Poggi, Michael',rep:'BN',model:'9452',stk:'26RH292',vin:'2T2BBMCA2TC132035',status:'Scheduled',term:'Cash',front:0,back:0,bonus:0,trade:'No',del:'2026-04-15',eta:'',comments:'',rdrPrev:0},
+{id:1774905976737,date:'2026-03-30',rdr:'2026-03-30',cust:'Dawson, Mary',rep:'OB',model:'9443',stk:'26RH297',vin:'JTJCJMGA3T2043477',status:'Delivered',term:'Cash',front:-563,back:0,bonus:0,trade:'No',del:'2026-03-31',eta:'',comments:''},
+{id:1774904993100,date:'2026-03-30',rdr:'2026-03-30',cust:'Obaji, Rola',rep:'Deek',model:'',stk:'26GX281',vin:'JTJTBCDX6T5081378',status:'Scheduled',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'2026-03-31',eta:'',comments:'later',rdrPrev:0},
+{id:1774614216541,date:'',rdr:'2026-03-28',cust:'Camilleri, Joseph',rep:'MO',model:'9453',stk:'26RH271',vin:'2T2BBMCAXTC130405',status:'Delivered',term:'Cash',front:299,back:3277,bonus:0,trade:'No',del:'2026-03-28',eta:'',comments:''},
+{id:1774614177654,date:'',rdr:'2026-03-27',cust:'Ankerman, Margaret',rep:'JB',model:'9453',stk:'26TX274',vin:'5TDAAAB65TS072533',status:'Delivered',term:'Cash',front:4541,back:2094,bonus:0,trade:'No',del:'2026-03-27',eta:'',comments:''},
+{id:1774614123054,date:'2026-03-30',rdr:'2026-03-30',cust:'Yost, Geary',rep:'KM',model:'9453',stk:'26RH288',vin:'2T2BBMCA8TC129138',status:'Delivered',term:'Cash',front:1944,back:0,bonus:0,trade:'Yes',del:'2026-03-30',eta:'',comments:'Naperville'},
+{id:1774614059692,date:'2026-03-31',rdr:'2026-03-31',cust:'Crow, Clinton',rep:'E$',model:'9453',stk:'26RH295',vin:'2T2BBMCA2TC130737',status:'Scheduled',term:'Finance',front:0,back:0,bonus:0,trade:'Yes',del:'2026-04-03',eta:'',comments:'',rdrPrev:0},
+{id:1,date:'2026-03-27',rdr:'2026-03-30',cust:'Booher, Joseph',rep:'JB',model:'9733',stk:'26UH280',vin:'T2016308',status:'Delivered',term:'Lease',front:-110,back:650,bonus:0,trade:'No',del:'2026-03-27',eta:'2026-03-20',comments:'LDPP'},
+{id:2,date:'2026-03-30',rdr:'',cust:'Watson, Susan',rep:'KM',model:'',stk:'2T2GKCEZ6TC12A798',vin:'C12A798',status:'Freight',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-09',comments:'4/09'},
+{id:3,date:'2026-03-30',rdr:'2026-03-30',cust:'Zapf, David and Rachel',rep:'JB',model:'',stk:'26NH290',vin:'JTJGKCEZ5T2078328',status:'Scheduled',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'2026-04-04',eta:'2026-03-27',comments:'3/27',rdrPrev:0},
+{id:4,date:'2026-03-27',rdr:'2026-03-27',cust:'Richmond Street',rep:'JB',model:'9704',stk:'26GX282',vin:'T5081040',status:'Delivered',term:'Finance',front:5721,back:0,bonus:0,trade:'No',del:'2026-03-27',eta:'2026-03-26',comments:'3/26'},
+{id:13,date:'2026-03-16',rdr:'2026-03-28',cust:'Murray, Amy Jo',rep:'E$',model:'9451',stk:'26RH273',vin:'',status:'Delivered',term:'Lease',front:1763,back:600,bonus:0,trade:'No',del:'2026-03-28',eta:'',comments:'need deal... pay dispo'},
+{id:14,date:'2026-03-16',rdr:'2026-03-16',cust:'Telman, Blanca',rep:'MO',model:'9845',stk:'26NH265',vin:'',status:'Delivered',term:'Finance',front:1629,back:0,bonus:0,trade:'No',del:'2026-03-30',eta:'',comments:'3/21',rdrPrev:0},
+{id:15,date:'2026-03-16',rdr:'2026-03-16',cust:'Lapien, John',rep:'E$',model:'9453',stk:'26RH255',vin:'',status:'Delivered',term:'Cash',front:2553.35,back:2052,bonus:0,trade:'No',del:'2026-03-24',eta:'',comments:'950 DT',rdrPrev:0},
+{id:16,date:'2026-03-16',rdr:'2026-03-16',cust:'Knapp, Deb',rep:'KM',model:'9455',stk:'26RH254',vin:'',status:'Unscheduled',term:'Lease',front:0,back:0,bonus:0,trade:'No',del:'',eta:'',comments:'April',rdrPrev:0},
+{id:18,date:'2026-03-16',rdr:'2026-03-16',cust:'Finn, Maria',rep:'JB',model:'9846',stk:'26NH264',vin:'',status:'Delivered',term:'Finance',front:1874,back:0,bonus:0,trade:'No',del:'2026-03-25',eta:'',comments:'3/28'},
+{id:19,date:'2026-02-06',rdr:'2026-02-06',cust:'Ferguson, George',rep:'JL',model:'9262',stk:'26LC214',vin:'',status:'Delivered',term:'Cash',front:7948,back:0,bonus:0,trade:'No',del:'2026-03-02',eta:'',comments:'',rdrPrev:1},
+{id:20,date:'2026-02-16',rdr:'2026-02-16',cust:'Stoepker, Linda',rep:'Deek',model:'9452',stk:'26RH227',vin:'',status:'Delivered',term:'Cash',front:4809,back:0,bonus:0,trade:'Yes',del:'2026-03-09',eta:'',comments:'MARCH 9',rdrPrev:1},
+{id:21,date:'2026-03-02',rdr:'2026-03-02',rdrPrev:1,cust:'Penninga, Brian',rep:'JL',model:'9846',stk:'26NH245',vin:'',status:'Delivered',term:'Lease',front:2261,back:2527,bonus:0,trade:'Yes',del:'2026-03-06',eta:'',comments:'FRIDAY 1pm'},
+{id:22,date:'2026-03-02',rdr:'2026-03-02',rdrPrev:1,cust:'Kara Draayer',rep:'JB',model:'9357',stk:'26TX175',vin:'',status:'Delivered',term:'Lease',front:2763,back:4950,bonus:0,trade:'Yes',del:'2026-03-02',eta:'',comments:'SPOT!'},
+{id:23,date:'2026-03-02',rdr:'2026-03-02',rdrPrev:1,cust:'Harrison, Abby',rep:'Deek',model:'9452',stk:'26RH243',vin:'',status:'Delivered',term:'Finance',front:-1185,back:0,bonus:0,trade:'No',del:'2026-03-02',eta:'',comments:'ROUGH deal!!'},
+{id:24,date:'2026-03-02',rdr:'2026-03-02',rdrPrev:1,cust:'Campbell, Amanda',rep:'MO',model:'9846',stk:'26NH253',vin:'',status:'Delivered',term:'Finance',front:2568,back:6660,bonus:0,trade:'No',del:'2026-03-18',eta:'',comments:'pushed 72mo'},
+{id:25,date:'2026-03-09',rdr:'2026-03-09',cust:'Guinnup, Therese',rep:'E$',model:'9836',stk:'26NX246',vin:'',status:'Delivered',term:'Lease',front:1993,back:3873,bonus:0,trade:'No',del:'2026-03-09',eta:'',comments:'DT IN - LUBBOCK TX'},
+{id:26,date:'2026-03-10',rdr:'2026-03-10',cust:'Thompson, Antoinette',rep:'MO',model:'9412',stk:'26RX250',vin:'',status:'Delivered',term:'Cash',front:3442,back:1952,bonus:0,trade:'No',del:'2026-03-10',eta:'',comments:'3/10'},
+{id:27,date:'2026-03-12',rdr:'2026-03-12',cust:'Marin, Carol',rep:'E$',model:'9845',stk:'26NH252',vin:'',status:'Delivered',term:'Lease',front:2253,back:1522,bonus:0,trade:'Yes',del:'2026-03-11',eta:'',comments:'WED'},
+{id:28,date:'2026-03-12',rdr:'2026-03-12',cust:'Mahasaded, Vilaphon',rep:'BN',model:'9733',stk:'25UH610',vin:'',status:'Delivered',term:'Finance',front:2162,back:6479,bonus:0,trade:'No',del:'2026-03-11',eta:'',comments:'HERE'},
+{id:29,date:'2026-03-12',rdr:'2026-03-12',cust:'Lai, Thanh',rep:'BN',model:'9455',stk:'26RH247',vin:'',status:'Delivered',term:'Cash',front:1732,back:0,bonus:0,trade:'No',del:'2026-03-11',eta:'',comments:''},
+{id:30,date:'2026-03-13',rdr:'2026-03-13',cust:'Douglas Britton',rep:'BN',model:'9414',stk:'26RX92',vin:'',status:'Delivered',term:'Finance',front:-799,back:1202,bonus:0,trade:'No',del:'2026-03-13',eta:'',comments:'SPOT'},
+{id:31,date:'2026-03-16',rdr:'2026-03-16',cust:'Yeager, Mary',rep:'JB',model:'9733',stk:'25UH607',vin:'',status:'Delivered',term:'Cash',front:-1234,back:0,bonus:0,trade:'No',del:'2026-03-16',eta:'',comments:''},
+{id:32,date:'2026-03-16',rdr:'2026-03-16',cust:'Panovong, Boua',rep:'BN',model:'9415',stk:'26RX266',vin:'10C228',status:'Delivered',term:'Finance',front:1483,back:0,bonus:0,trade:'No',del:'2026-03-18',eta:'',comments:''},
+{id:33,date:'2026-03-16',rdr:'2026-03-16',cust:'Nutter, Rich',rep:'JB',model:'9353',stk:'26TX248',vin:'',status:'Delivered',term:'Lease',front:2058,back:2151,bonus:0,trade:'Yes',del:'2026-03-20',eta:'',comments:'pushed JB mobile'},
+{id:34,date:'2026-03-16',rdr:'2026-03-16',cust:'Morse, Susan',rep:'KM',model:'9443',stk:'26RH258',vin:'',status:'Delivered',term:'Finance',front:1224,back:906,bonus:0,trade:'No',del:'2026-03-20',eta:'',comments:'pushed 3/18'},
+{id:35,date:'2026-03-16',rdr:'2026-03-16',cust:'Judy Swartz',rep:'KM',model:'9452',stk:'26RH263',vin:'',status:'Delivered',term:'Finance',front:4822,back:3914,bonus:0,trade:'No',del:'2026-03-18',eta:'',comments:'3/18 WEDNESDAY'},
+{id:36,date:'2026-03-16',rdr:'2026-03-16',cust:'Fawcett, Laura',rep:'Deek',model:'9516',stk:'25IS611',vin:'',status:'Delivered',term:'Finance',front:2232,back:4389,bonus:0,trade:'No',del:'2026-03-18',eta:'',comments:''},
+{id:37,date:'2026-03-16',rdr:'2026-03-16',cust:'Spykman, Erik',rep:'E$',model:'9451',stk:'26RH262',vin:'',status:'Delivered',term:'Cash',front:-111,back:656,bonus:0,trade:'No',del:'2026-03-18',eta:'',comments:'Re-Report 3/23'},
+{id:38,date:'2026-03-16',rdr:'2026-03-16',cust:'Carlson, Lewis',rep:'Deek',model:'9353',stk:'26TX257',vin:'',status:'Delivered',term:'Cash',front:-383,back:0,bonus:0,trade:'No',del:'2026-03-18',eta:'',comments:''},
+{id:39,date:'2026-03-18',rdr:'2026-03-18',cust:'Halong, Mekong',rep:'MO',model:'9411',stk:'26RX249',vin:'',status:'Delivered',term:'Cash',front:2381,back:0,bonus:0,trade:'No',del:'2026-03-18',eta:'',comments:'SPOT'},
+{id:17,date:'2026-03-21',rdr:'2026-03-16',cust:'Kunduru, Srikar',rep:'Deek',model:'9451',stk:'26RH261',vin:'',status:'Delivered',term:'Finance',front:1365,back:0,bonus:0,trade:'No',del:'2026-03-21',eta:'',comments:''},
+{id:63,date:'2026-03-21',rdr:'2026-03-21',cust:'Vega, Irving Era',rep:'KM',model:'9455',stk:'26RH272',vin:'6TC130501',status:'Delivered',term:'Finance',front:1413,back:926,bonus:0,trade:'No',del:'2026-03-21',eta:'',comments:''},
+{id:45,date:'2026-03-30',rdr:'',cust:'Poggi, Mich.',rep:'BN',model:'9452',stk:'',vin:'2TC132035',status:'Unscheduled',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-01',comments:'4/01'},
+{id:46,date:'2026-03-27',rdr:'',cust:'Trevino, R.',rep:'Deek',model:'9411',stk:'',vin:'7TC143857',status:'Unscheduled',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-02',comments:'4/02'},
+{id:48,date:'',rdr:'',cust:'Albery, John/Linda',rep:'Deek',model:'9852F',stk:'',vin:'5T2089526',status:'Freight',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-09',comments:'4/09'},
+{id:49,date:'',rdr:'',cust:'Blais, Steve',rep:'Deek',model:'9706F',stk:'',vin:'8T5082662',status:'Freight',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-17',comments:'4/17'},
+{id:51,date:'',rdr:'',cust:'Middleton',rep:'KM',model:'9845F',stk:'',vin:'8TC12A463',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-07',comments:'4/07'},
+{id:52,date:'',rdr:'',cust:'Wilson, R.',rep:'Deek',model:'9412F',stk:'',vin:'5TC12C753',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-10',comments:'4/10'},
+{id:53,date:'',rdr:'',cust:'Rex, Bill',rep:'Deek',model:'9453F',stk:'',vin:'1TC13B592',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-12',comments:'4/12'},
+{id:54,date:'',rdr:'',cust:'Watson, Susan',rep:'KM',model:'9845F',stk:'',vin:'6TC12A798',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-13',comments:'4/13'},
+{id:55,date:'',rdr:'',cust:'Vannak, Eap',rep:'E$',model:'9835F',stk:'',vin:'2TC13A116',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-15',comments:'4/15'},
+{id:56,date:'2026-03-30',rdr:'',cust:'Rosenburg, Rhonda',rep:'Deek',model:'',stk:'',vin:'0TC13C376',status:'Allocated',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-17',comments:'4/17'},
+{id:57,date:'',rdr:'',cust:'Gillette, Ta.',rep:'KM',model:'9451F',stk:'',vin:'9TC14B237',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-22',comments:'4/22'},
+{id:58,date:'',rdr:'',cust:'Martin, Pa.',rep:'KM',model:'9845F',stk:'',vin:'7TC14A395',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-22',comments:'4/22'},
+{id:59,date:'',rdr:'',cust:'Dreiband',rep:'Deek',model:'9451F',stk:'',vin:'TC14C898',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-04-25',comments:'4/25'},
+{id:60,date:'',rdr:'',cust:'Gwynn, Ti.',rep:'Deek',model:'9458F',stk:'',vin:'XTC15D231',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-05-03',comments:'5/03'},
+{id:61,date:'',rdr:'',cust:'Salisbury',rep:'Deek',model:'9704F',stk:'',vin:'0T5084172',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-05-13',comments:'5/13'},
+{id:62,date:'',rdr:'',cust:'Brown, Kim',rep:'JB',model:'9735F',stk:'',vin:'1T2017220',status:'Allocated',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-05-13',comments:'5/13'},
+{id:3,date:'',rdr:'',cust:'Zapf, David',rep:'JB',model:'9845',stk:'JTJGKCEZ5T2078328',vin:'T2078328',status:'Freight',term:'',front:0,back:0,bonus:0,trade:'No',del:'',eta:'2026-03-27',comments:'3/27'},
+{id:8,date:'',rdr:'2026-03-30',cust:'Horton, Jeremy',rep:'KM',model:'9706',stk:'26GX296',vin:'T5081713',status:'Scheduled',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'2026-04-10',eta:'2026-03-23',comments:'3/23',rdrPrev:0},
+{id:1774990000001,date:'2026-03-25',rdr:'2026-03-25',cust:'Liu, Yixia',rep:'NS',model:'9414',stk:'26RX259',vin:'',status:'Delivered',term:'Finance',front:-410,back:796,bonus:0,trade:'No',del:'2026-03-25',eta:'',comments:''},
+{id:1774990000002,date:'2026-03-28',rdr:'2026-03-28',cust:'Lange, Mark',rep:'KM',model:'9452',stk:'26RH293',vin:'',status:'Delivered',term:'Finance',front:3486,back:1217,bonus:0,trade:'No',del:'2026-03-28',eta:'',comments:''},
+{id:1774990000010,date:'2026-03-28',rdr:'2026-03-28',cust:'Meier, William',rep:'BN',model:'9443',stk:'26RH276',vin:'T2042132',status:'Delivered',term:'Cash',front:3332,back:656,bonus:0,trade:'No',del:'2026-03-28',eta:'',comments:''},
+{id:1774990000011,date:'2026-03-26',rdr:'2026-03-26',cust:'Goodyke, David',rep:'BN',model:'9360',stk:'26TH278',vin:'511H726',status:'Delivered',term:'Finance',front:1288,back:952,bonus:0,trade:'No',del:'2026-03-25',eta:'',comments:''},
+{id:11,date:'2026-03-30',rdr:'2026-03-30',cust:'Blundy, Carol',rep:'KM',model:'9846',stk:'26NH285',vin:'2T2HKCEZ5TC070511',status:'Delivered',term:'Finance',front:3155,back:656,bonus:0,trade:'No',del:'2026-03-31',eta:'2026-03-30',comments:'3/30'},
+{id:1775071000003,date:'2026-03-31',rdr:'2026-03-31',cust:'Thomas, PJ',rep:'KM',model:'9845',stk:'26NH298',vin:'TC070486',status:'Scheduled',term:'Finance',front:0,back:0,bonus:0,trade:'No',del:'2026-04-04',eta:'',comments:'Saturday 4/4',rdrPrev:0}
+];
+const APRIL_INV=[
+{stk:'26TX277',vin:'1TS073257',model:'9355F — TX 350 Luxury AWD',status:'Ground',eta:'',cust:'',rep:'',notes:'',id:2000},
+{stk:'',vin:'2TS020211',model:'9360A — TX 500h F Sport',status:'Ground',eta:'',cust:'',rep:'',notes:'',id:2001},
+{stk:'26RX294',vin:'7TC143857',model:'9411F — RX 350 Premium AWD',status:'Ground',eta:'',cust:'',rep:'',notes:'',id:2002},
+{stk:'26RX251',vin:'2TC141109',model:'9412F — RX 350 Premium+',status:'Ground',eta:'',cust:'',rep:'',notes:'',id:2003},
+{stk:'26RX235',vin:'3TC139515',model:'9413F — RX 350 Luxury AWD',status:'Ground',eta:'',cust:'',rep:'',notes:'',id:2004},
+{stk:'26RH287',vin:'TC024996',model:'9458F — RX 500h F Sport',status:'Ground',eta:'',cust:'',rep:'',notes:'HERE!',id:2005},
+{stk:'26RH299',vin:'XTC025129',model:'9458F — RX 500h F Sport',status:'Ground',eta:'',cust:'',rep:'',notes:'',id:2006},
+{stk:'26RH275',vin:'0TC025091',model:'9458F — RX 500h F Sport',status:'Ground',eta:'',cust:'',rep:'',notes:'',id:2007},
+{stk:'26LH220',vin:'XT4011307',model:'9626A — LX 700h Overtrail',status:'Ground',eta:'',cust:'',rep:'',notes:'',id:2008},
+{stk:'',vin:'3TC071104',model:'9845F — NX 350h Premium AWD',status:'Freight',eta:'2026-04-02',cust:'KM — Watson, Susan',rep:'KM',notes:'SOLD',id:2009},
+{stk:'',vin:'5T2089526',model:'9852F — NX 450h+ Luxury AWD',status:'Freight',eta:'2026-04-02',cust:'Deek — Albery, John/Linda',rep:'Deek',notes:'SOLD',id:2010},
+{stk:'',vin:'2TC144284',model:'9412F — RX 350 Premium+',status:'Freight',eta:'2026-04-03',cust:'Deek — Wilson, Ronald',rep:'Deek',notes:'SOLD',id:2011},
+{stk:'',vin:'8T2016551',model:'9733F — UX 300h Premium AWD',status:'Freight',eta:'2026-04-03',cust:'',rep:'',notes:'',id:2012},
+{stk:'',vin:'TC070885',model:'9845F — NX 350h Premium AWD',status:'Freight',eta:'2026-04-03',cust:'KM — Middleton, Gary',rep:'KM',notes:'SOLD',id:2013},
+{stk:'',vin:'TA005486',model:'9906F — RZ 350e Premium',status:'Freight',eta:'2026-04-03',cust:'',rep:'',notes:'',id:2014},
+{stk:'',vin:'XTC144503',model:'9415F — RX 350 F Sport Handling AWD',status:'Freight',eta:'2026-04-05',cust:'',rep:'',notes:'',id:2015},
+{stk:'',vin:'6TC071295',model:'9844F — NX 350h AWD',status:'Freight',eta:'2026-04-07',cust:'',rep:'',notes:'',id:2016},
+{stk:'',vin:'2TS074675',model:'9353F — TX 350 Premium AWD',status:'Freight',eta:'2026-04-08',cust:'',rep:'',notes:'',id:2017},
+{stk:'',vin:'0TC144736',model:'9411F — RX 350 Premium AWD',status:'Freight',eta:'2026-04-08',cust:'',rep:'',notes:'',id:2018},
+{stk:'',vin:'8TC133545',model:'9451F — RX 350h Premium AWD',status:'Freight',eta:'2026-04-08',cust:'Deek — Rosenburg, Rhonda and Wes',rep:'Deek',notes:'SOLD',id:2019},
+{stk:'',vin:'Z5TC114195',model:'9835F — NX 350 Premium AWD',status:'Freight',eta:'2026-04-10',cust:'E$ — Vannak, Eap',rep:'E$',notes:'SOLD',id:2020},
+{stk:'',vin:'7T2044129',model:'9443F — RX 450h+ Luxury AWD',status:'Freight',eta:'2026-04-13',cust:'',rep:'',notes:'',id:2021},
+{stk:'',vin:'T5045828',model:'9516A — IS 350 F Sport AWD',status:'Freight',eta:'2026-04-13',cust:'',rep:'',notes:'',id:2022},
+{stk:'',vin:'8T5082662',model:'9706F — GX 550 Overtrail+',status:'Freight',eta:'2026-04-13',cust:'Deek — Blais, Steve',rep:'Deek',notes:'SOLD',id:2023},
+{stk:'',vin:'T5046363',model:'9516A — IS 350 F Sport AWD',status:'Freight',eta:'2026-04-14',cust:'',rep:'',notes:'',id:2024},
+{stk:'',vin:'T2090383',model:'9852F — NX 450h+ Luxury AWD',status:'Freight',eta:'2026-04-19',cust:'',rep:'',notes:'',id:2025},
+{stk:'',vin:'T2090072',model:'9855F — NX 450h+ Premium AWD',status:'Freight',eta:'2026-04-19',cust:'',rep:'',notes:'',id:2026},
+{stk:'',vin:'9T5046298',model:'9508A — IS 350 F Sport Design AWD',status:'Freight',eta:'2026-04-24',cust:'OB — Palace, Nate',rep:'OB',notes:'SOLD',id:2027},
+{stk:'',vin:'T5046710',model:'9508A — IS 350 F Sport Design AWD',status:'Freight',eta:'2026-04-27',cust:'',rep:'',notes:'',id:2028},
+{stk:'',vin:'1T2017220',model:'9735F — UX 300h F Sport Design AWD',status:'Freight',eta:'2026-04-29',cust:'JB — Brown, Kim',rep:'JB',notes:'SOLD',id:2029},
+{stk:'',vin:'T5045089',model:'9516A — IS 350 F Sport AWD',status:'Freight',eta:'',cust:'Deek — Working (Aliria Ali)',rep:'Deek',notes:'Working',id:2030},
+{stk:'',vin:'6T4095393',model:'9623F — LX 600 Luxury',status:'Freight',eta:'2026-04-01',cust:'KM — Southwind Restaurants',rep:'KM',notes:'SOLD',id:2031},
+{stk:'',vin:'6TC14A263',model:'9846F — NX 350h Luxury AWD',status:'Allocated',eta:'2026-04-12',cust:'',rep:'',notes:'',id:2032},
+{stk:'',vin:'1TC13B592',model:'9453F — RX 350h Luxury AWD',status:'Allocated',eta:'2026-04-13',cust:'Deek — Rex, Bill & Sarah',rep:'Deek',notes:'SOLD',id:2033},
+{stk:'',vin:'9TC13B083',model:'9411F — RX 350 Premium AWD',status:'Allocated',eta:'2026-04-14',cust:'',rep:'',notes:'',id:2034},
+{stk:'',vin:'9TC14B237',model:'9451F — RX 350h Premium AWD',status:'Allocated',eta:'2026-04-21',cust:'KM — Gillette, Tammy',rep:'KM',notes:'SOLD',id:2035},
+{stk:'',vin:'7TC14A395',model:'9845F — NX 350h Premium AWD',status:'Allocated',eta:'2026-04-22',cust:'KM — Martin, Pam and Steve',rep:'KM',notes:'SOLD',id:2036},
+{stk:'',vin:'2TC14D095',model:'9412F — RX 350 Premium+',status:'Allocated',eta:'2026-04-25',cust:'',rep:'',notes:'',id:2037},
+{stk:'',vin:'TC14C898',model:'9451F — RX 350h Premium AWD',status:'Allocated',eta:'2026-04-25',cust:'Deek — Dreiband, Barb',rep:'Deek',notes:'SOLD',id:2038},
+{stk:'',vin:'0TC15C114',model:'9413F — RX 350 Luxury AWD',status:'Allocated',eta:'2026-04-30',cust:'',rep:'',notes:'',id:2039},
+{stk:'',vin:'64TS14168I',model:'9360H — TX 500h F Sport Performance',status:'Allocated',eta:'2026-05-01',cust:'',rep:'',notes:'',id:2040},
+{stk:'',vin:'0TC15A869',model:'9834F — NX 350 AWD',status:'Allocated',eta:'2026-05-01',cust:'',rep:'',notes:'',id:2041},
+{stk:'',vin:'4TC15D346',model:'9415F — RX 350 F Sport Handling AWD',status:'Allocated',eta:'2026-05-03',cust:'',rep:'',notes:'',id:2042},
+{stk:'',vin:'XTC15D231',model:'9458F — RX 500h F Sport Performance',status:'Allocated',eta:'2026-05-03',cust:'Deek — Gwynn, Tiara',rep:'Deek',notes:'SOLD',id:2043},
+{stk:'',vin:'0TC16C066',model:'9458F — RX 500h F Sport Performance',status:'Allocated',eta:'2026-05-08',cust:'',rep:'',notes:'',id:2044},
+{stk:'',vin:'9TC16C477',model:'9412F — RX 350 Premium+',status:'Allocated',eta:'2026-05-09',cust:'',rep:'',notes:'',id:2045},
+{stk:'',vin:'0T5084172',model:'9704F — GX 550 Luxury+',status:'Allocated',eta:'2026-05-09',cust:'Deek — Salisbury, Mark',rep:'Deek',notes:'SOLD',id:2046},
+{stk:'',vin:'4TA112969',model:'9262F — LC 500 Convertible',status:'Allocated',eta:'2026-05-14',cust:'NS — John Leese',rep:'NS',notes:'SOLD',id:2047},
+{stk:'',vin:'7TC17B713',model:'9412F — RX 350 Premium+',status:'Allocated',eta:'2026-05-14',cust:'',rep:'',notes:'',id:2048},
+{stk:'',vin:'8T5084713',model:'9704F — GX 550 Luxury+',status:'Allocated',eta:'2026-05-14',cust:'Deek — Kessler, Nathan',rep:'Deek',notes:'SOLD',id:2049},
+{stk:'',vin:'T5084499',model:'9706F — GX 550 Overtrail+',status:'Allocated',eta:'2026-05-14',cust:'Deek — Crypto Car Rental',rep:'Deek',notes:'SOLD',id:2050},
+{stk:'',vin:'9T2031773',model:'9835F — NX 350 Premium AWD',status:'Allocated',eta:'2026-05-14',cust:'KM — Boweles, V',rep:'KM',notes:'SOLD',id:2051},
+{stk:'',vin:'TA006023',model:'9902F — RZ 450e Premium AWD',status:'Allocated',eta:'2026-05-14',cust:'',rep:'',notes:'',id:2052},
+{stk:'',vin:'5TC17C617',model:'9411F — RX 350 Premium AWD',status:'Allocated',eta:'2026-05-16',cust:'',rep:'',notes:'',id:2053},
+{stk:'',vin:'0TC17C604',model:'9451F — RX 350h Premium AWD',status:'Allocated',eta:'2026-05-16',cust:'',rep:'',notes:'',id:2054},
+{stk:'',vin:'2TC17A616',model:'9835F — NX 350 Premium AWD',status:'Allocated',eta:'2026-05-16',cust:'',rep:'',notes:'',id:2055},
+{stk:'',vin:'6TC17C820',model:'9453F — RX 350h Luxury AWD',status:'Allocated',eta:'2026-05-17',cust:'',rep:'',notes:'',id:2056},
+{stk:'',vin:'3TC17B130',model:'9835F — NX 350 Premium AWD',status:'Allocated',eta:'2026-05-18',cust:'',rep:'',notes:'',id:2057},
+{stk:'',vin:'61TS17H893',model:'9353H — TX 350 Premium AWD',status:'Allocated',eta:'2026-05-19',cust:'',rep:'',notes:'',id:2058},
+{stk:'',vin:'T2045502',model:'9443F — RX 450h+ Luxury AWD',status:'Allocated',eta:'2026-06-01',cust:'NS — Eaton',rep:'NS',notes:'SOLD',id:2059},
+{stk:'',vin:'T5047264',model:'9516A — IS 350 F Sport AWD',status:'Allocated',eta:'2026-06-01',cust:'',rep:'',notes:'',id:2060},
+{stk:'',vin:'T2031937',model:'9836F — NX 350 Luxury AWD',status:'Allocated',eta:'2026-06-01',cust:'',rep:'',notes:'',id:2061},
+{stk:'',vin:'69TS151075',model:'9353H — TX 350 Premium AWD',status:'Allocated',eta:'',cust:'',rep:'',notes:'',id:2062},
+{stk:'',vin:'61TS16K021',model:'9353H — TX 350 Premium AWD',status:'Allocated',eta:'2026-04-27',cust:'',rep:'',notes:'',id:2063},
+{stk:'',vin:'64TS131560',model:'9353F — TX 350 Premium AWD',status:'Allocated',eta:'',cust:'',rep:'',notes:'',id:2064},
+{stk:'',vin:'65TS151154',model:'9355H — TX 350 Luxury AWD',status:'Allocated',eta:'',cust:'',rep:'',notes:'',id:2065},
+{stk:'',vin:'XT5151408',model:'9355H — TX 350 Luxury AWD',status:'Allocated',eta:'',cust:'MO — Miller, Margaret',rep:'MO',notes:'SOLD',id:2066},
+{stk:'',vin:'64TS171346',model:'9355H — TX 350 Luxury AWD',status:'Allocated',eta:'2026-05-04',cust:'',rep:'',notes:'',id:2067},
+{stk:'',vin:'TC15C892',model:'9452F — RX 350h Premium+',status:'Allocated',eta:'',cust:'KM — Hughes, Holly',rep:'KM',notes:'SOLD',id:2068}
+];
+const MARCH_INV=[{id:1001,stk:'26TX274',vin:'5TS072533',model:'9353F — TX 350 Premium',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:1002,stk:'26RX259',vin:'XTC139270',model:'9411F — RX 350 Premium',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:1003,stk:'26RX267',vin:'8TC142751',model:'9411F — RX 350 Premium',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:1004,stk:'26RX239',vin:'4TC140107',model:'9412F — RX 350+',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:1005,stk:'26RX251',vin:'2TC141109',model:'9412F — RX 350+',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:1006,stk:'26RX235',vin:'3TC139515',model:'9413F — RX 350 Luxury',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:1007,stk:'26RH232',vin:'1T2042442',model:'9443B — RX 450h+ Luxury',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:1008,stk:'26RH273',vin:'2TC130897',model:'9451F — NX 350h Premium',status:'Ground',eta:'',cust:'E$ — Amy Jo Murray',rep:'E$',notes:'SOLD'},{id:1009,stk:'26RH271',vin:'TC130405',model:'9453F — RX 350h Luxury',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:1010,stk:'26RH272',vin:'6TC130501',model:'9455F — RX 350h F Sport',status:'Ground',eta:'',cust:'KM — Vega, Irv',rep:'KM',notes:'SOLD'},{id:1011,stk:'26RH275',vin:'0TC025091',model:'9458F — RX 500h',status:'Ground',eta:'',cust:'',rep:'',notes:'Available!'},{id:1012,stk:'26LH220',vin:'XT4011307',model:'9626A — LX 700h Overtrail',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:1013,stk:'26UH268',vin:'XT2015594',model:'9735F — UX 300h F Sport',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:1014,stk:'26NH230',vin:'9T2085723',model:'9852C — NX 450h+ Luxury',status:'Ground',eta:'',cust:'',rep:'',notes:''},{id:2001,stk:'',vin:'TS071659',model:'9353F — TX 350 Premium',status:'Freight',eta:'',cust:'',rep:'',notes:''},{id:2002,stk:'',vin:'TS073257',model:'9355F — TX 350 Luxury',status:'Freight',eta:'',cust:'',rep:'',notes:''},{id:2003,stk:'',vin:'TS023150',model:'9360F — TX 500h F Sport',status:'Freight',eta:'',cust:'BN — Goodyke',rep:'BN',notes:'SOLD'},{id:2004,stk:'',vin:'T2044129',model:'9443F — RX 450h+ Luxury',status:'Freight',eta:'',cust:'',rep:'',notes:''},{id:2005,stk:'',vin:'T2042132',model:'9443B — RX 450h+ Luxury',status:'Freight',eta:'',cust:'BN — Meier, William',rep:'BN',notes:'SOLD'},{id:2006,stk:'',vin:'TC131925',model:'9452F — NX 350h+ Premium',status:'Freight',eta:'',cust:'KM — Lange, Karla',rep:'KM',notes:'SOLD'},{id:2007,stk:'',vin:'TC132035',model:'9452F — NX 350h+ Premium',status:'Freight',eta:'',cust:'BN — Poggi, Mich.',rep:'BN',notes:'SOLD'},{id:2008,stk:'',vin:'TC131217',model:'9453F — RX 350h Luxury',status:'Freight',eta:'',cust:'',rep:'',notes:''},{id:2009,stk:'',vin:'T5045986',model:'9508F — IS 350 F Sport Design',status:'Freight',eta:'',cust:'',rep:'',notes:'2026 first one!'},{id:2010,stk:'',vin:'T5045828',model:'9516A — IS 350 F Sport',status:'Freight',eta:'',cust:'',rep:'',notes:''},{id:2011,stk:'',vin:'T5046363',model:'9516A — IS 350 F Sport',status:'Freight',eta:'',cust:'',rep:'',notes:''},{id:2012,stk:'',vin:'T5045089',model:'9516A — IS 350 F Sport',status:'Freight',eta:'',cust:'Deek — Working (Aliria A.)',rep:'Deek',notes:'Working'},{id:2013,stk:'',vin:'T4095393',model:'9623F — LX 600 Luxury',status:'Freight',eta:'',cust:'',rep:'',notes:''},{id:2014,stk:'',vin:'T5081378',model:'9702F — GX 550 Premium+',status:'Freight',eta:'',cust:'Deek — Obaji, Rola',rep:'Deek',notes:'SOLD'},{id:2015,stk:'',vin:'T5081040',model:'9704A — GX 550 Luxury+',status:'Freight',eta:'',cust:'JB — Verwoert, Step',rep:'JB',notes:'SOLD'},{id:2016,stk:'',vin:'T5082662',model:'9706F — GX 550 Overtrail+',status:'Freight',eta:'',cust:'Deek — Blais, Steve',rep:'Deek',notes:'SOLD'},{id:2017,stk:'',vin:'T5081713',model:'9706F — GX 550 Overtrail+',status:'Freight',eta:'',cust:'KM — Horton, Jeremy',rep:'KM',notes:'SOLD'},{id:2018,stk:'',vin:'T2016551',model:'9733F — UX 300h Premium',status:'Freight',eta:'',cust:'',rep:'',notes:''},{id:2019,stk:'',vin:'T2030969',model:'9835F — NX 350 Premium',status:'Freight',eta:'',cust:'',rep:'',notes:'DT out PLNKY'},{id:2020,stk:'',vin:'T2078328',model:'9845F — NX 350h Premium',status:'Freight',eta:'',cust:'JB — Zapf, David',rep:'JB',notes:'SOLD'},{id:2021,stk:'',vin:'TC070407',model:'9845F — NX 350h Premium',status:'Freight',eta:'',cust:'Deek — Elliot, Grant',rep:'Deek',notes:'SOLD'},{id:2022,stk:'',vin:'TC070511',model:'9846F — NX 350h Luxury',status:'Freight',eta:'',cust:'KM — Blundy, Carol',rep:'KM',notes:'SOLD'},{id:2023,stk:'',vin:'XTC070617',model:'9846F — NX 350h Luxury',status:'Freight',eta:'',cust:'',rep:'',notes:''},{id:2024,stk:'',vin:'T2089526',model:'9852F — NX 450h+ Luxury',status:'Freight',eta:'',cust:'Deek — Albery, John/Linda',rep:'Deek',notes:'SOLD'},{id:2025,stk:'',vin:'TA005486',model:'9906F — RZ 350e Premium',status:'Freight',eta:'',cust:'',rep:'',notes:''},{id:3001,stk:'',vin:'4TA112969',model:'9262F — LC 500 Convertible',status:'Allocated',eta:'',cust:'NS — John Leese',rep:'NS',notes:'SOLD'},{id:3014,stk:'',vin:'5TC12C753',model:'9412F — RX 350+',status:'Allocated',eta:'',cust:'Deek — Wilson, R.',rep:'Deek',notes:'SOLD'},{id:3021,stk:'',vin:'7T112CT54',model:'9443F — RX 450h+ Luxury',status:'Allocated',eta:'',cust:'NS — Eaton',rep:'NS',notes:'SOLD'},{id:3022,stk:'',vin:'0TC13C376',model:'9451F — NX 350h Premium',status:'Allocated',eta:'',cust:'Deek — Rosenbu...',rep:'Deek',notes:'SOLD'},{id:3023,stk:'',vin:'9TC14B237',model:'9451F — NX 350h Premium',status:'Allocated',eta:'',cust:'KM — Gillette, Ta...',rep:'KM',notes:'SOLD'},{id:3024,stk:'',vin:'TC14C898',model:'9451F — NX 350h Premium',status:'Allocated',eta:'',cust:'Deek — Dreiband...',rep:'Deek',notes:'SOLD'},{id:3027,stk:'',vin:'TC15C892',model:'9452F — NX 350h+',status:'Allocated',eta:'',cust:'KM — Huges, Hol...',rep:'KM',notes:'SOLD'},{id:4001,stk:'',vin:'1TC13B592',model:'9453F — RX 350h Luxury',status:'Allocated',eta:'',cust:'Deek — Rex, Bill',rep:'Deek',notes:'SOLD'},{id:4004,stk:'',vin:'XTC15D231',model:'9458F — RX 500h F Sport',status:'Allocated',eta:'',cust:'Deek — Gwynn, Ti...',rep:'Deek',notes:'SOLD'},{id:4007,stk:'',vin:'T5084172',model:'9704F — GX 550 Luxury+',status:'Allocated',eta:'',cust:'Deek — Salisbury',rep:'Deek',notes:'SOLD'},{id:4008,stk:'',vin:'T5084713',model:'9704F — GX 550 Luxury+',status:'Allocated',eta:'',cust:'Deek — Kessler',rep:'Deek',notes:'SOLD'},{id:4009,stk:'',vin:'T5084499',model:'9706F — GX 550 Overtrail+',status:'Allocated',eta:'',cust:'Deek — Crypto C...',rep:'Deek',notes:'SOLD'},{id:4010,stk:'',vin:'1T2017220',model:'9735F — UX 300h F Sport',status:'Allocated',eta:'',cust:'JB — Brown, Kim',rep:'JB',notes:'SOLD'},{id:4013,stk:'',vin:'2TC13A116',model:'9835F — NX 350 Premium',status:'Allocated',eta:'',cust:'E$ — Vannak, Eap',rep:'E$',notes:'SOLD'},{id:4015,stk:'',vin:'9T2031773',model:'9835F — NX 350 Premium',status:'Allocated',eta:'',cust:'KM — Boweles, V',rep:'KM',notes:'SOLD'},{id:4017,stk:'',vin:'7TC13A259',model:'9844F — NX 350h',status:'Allocated',eta:'',cust:'E$ — Carol, Mary',rep:'E$',notes:'SOLD'},{id:4018,stk:'',vin:'7TC14A395',model:'9845F — NX 350h Premium',status:'Allocated',eta:'',cust:'KM — Martin, Pa...',rep:'KM',notes:'SOLD'},{id:4019,stk:'',vin:'6TC12A798',model:'9845F — NX 350h Premium',status:'Allocated',eta:'',cust:'KM — Watson, Su...',rep:'KM',notes:'SOLD'},{id:4020,stk:'',vin:'0TC12A277',model:'9845F — NX 350h Premium',status:'Allocated',eta:'',cust:'Deek — Rosenbu...',rep:'Deek',notes:'SOLD'},{id:4021,stk:'',vin:'8TC12A463',model:'9845F — NX 350h Premium',status:'Allocated',eta:'',cust:'KM — Middleton...',rep:'KM',notes:'SOLD'},
+{id:5001,stk:'',vin:'6T5081378',model:'9702F — GX 550 Premium+',status:'Freight',eta:'2026-03-27',cust:'Deek — Obaji, Rola',rep:'Deek',notes:'SOLD'},
+{id:5002,stk:'',vin:'1T5081040',model:'9704A — GX 550 Luxury+',status:'Freight',eta:'2026-03-27',cust:'JB — Verwoert, Step',rep:'JB',notes:'SOLD'},
+{id:5003,stk:'',vin:'5T2078328',model:'9845F — NX 350h Premium',status:'Freight',eta:'2026-03-28',cust:'JB — Zapf, David',rep:'JB',notes:'SOLD'},
+{id:5004,stk:'',vin:'5TC070407',model:'9845F — NX 350h Premium',status:'Freight',eta:'2026-03-28',cust:'Deek — Elliot, Grant',rep:'Deek',notes:'SOLD'},
+{id:5005,stk:'',vin:'5TC070511',model:'9846F — NX 350h Luxury A',status:'Freight',eta:'2026-03-29',cust:'KM — Blundy, Carol',rep:'KM',notes:'SOLD'},
+{id:5006,stk:'',vin:'T2030969',model:'9835F — NX 350 Premium',status:'Freight',eta:'2026-03-30',cust:'',rep:'',notes:'DT out PLNKY'},
+{id:5007,stk:'',vin:'2TC132035',model:'9452F — RX 350h Premium',status:'Freight',eta:'2026-04-01',cust:'BN — Poggi, Mich.',rep:'BN',notes:'SOLD'},
+{id:5008,stk:'',vin:'7TC143857',model:'9411F — RX 350 Premium A',status:'Freight',eta:'2026-04-02',cust:'Deek — Trevino, R.',rep:'Deek',notes:'SOLD'},
+{id:5009,stk:'',vin:'5T5081713',model:'9706F — GX 550 Overtrail+',status:'Freight',eta:'2026-04-02',cust:'KM — Horton, Jeremy',rep:'KM',notes:'SOLD'},
+{id:5010,stk:'',vin:'5T2089526',model:'9852F — NX 450h+ Luxury',status:'Freight',eta:'2026-04-09',cust:'Deek — Albery, Jo.',rep:'Deek',notes:'SOLD'},
+{id:5011,stk:'',vin:'3T5045986',model:'9508A — IS 350 F Sport Design',status:'Freight',eta:'2026-04-14',cust:'',rep:'',notes:'DT OUT - Classic JTHBZ'},
+{id:5012,stk:'',vin:'8T5082662',model:'9706F — GX 550 Overtrail+',status:'Freight',eta:'2026-04-17',cust:'Deek — Blais, Steve',rep:'Deek',notes:'SOLD'},
+{id:5013,stk:'',vin:'0TC12A277',model:'9845F — NX 350h Premium',status:'Allocated',eta:'2026-04-03',cust:'Deek — Rosenbu.',rep:'Deek',notes:'SOLD'},
+{id:5014,stk:'',vin:'8TC12A463',model:'9845F — NX 350h Premium',status:'Allocated',eta:'2026-04-07',cust:'KM — Middleton',rep:'KM',notes:'SOLD'},
+{id:5015,stk:'',vin:'5TC12C753',model:'9412F — RX 350 Premium+',status:'Allocated',eta:'2026-04-10',cust:'Deek — Wilson, R.',rep:'Deek',notes:'SOLD'},
+{id:5016,stk:'',vin:'1TC13B592',model:'9453F — RX 350h Luxury A',status:'Allocated',eta:'2026-04-12',cust:'Deek — Rex, Bill',rep:'Deek',notes:'SOLD'},
+{id:5017,stk:'',vin:'6TC12A798',model:'9845F — NX 350h Premium',status:'Allocated',eta:'2026-04-13',cust:'KM — Watson, Susan',rep:'KM',notes:'SOLD'},
+{id:5018,stk:'',vin:'2TC13A116',model:'9835F — NX 350 Premium',status:'Allocated',eta:'2026-04-15',cust:'E$ — Vannak, Eap',rep:'E$',notes:'SOLD'},
+{id:5019,stk:'',vin:'0TC13C376',model:'9451F — RX 350h Premium',status:'Allocated',eta:'2026-04-17',cust:'Deek — Rosenbu.',rep:'Deek',notes:'SOLD'},
+{id:5020,stk:'',vin:'9TC14B237',model:'9451F — RX 350h Premium',status:'Allocated',eta:'2026-04-22',cust:'KM — Gillette, Ta.',rep:'KM',notes:'SOLD'},
+{id:5021,stk:'',vin:'7TC14A395',model:'9845F — NX 350h Premium',status:'Allocated',eta:'2026-04-22',cust:'KM — Martin, Pa.',rep:'KM',notes:'SOLD'},
+{id:5022,stk:'',vin:'TC14C898',model:'9451F — RX 350h Premium',status:'Allocated',eta:'2026-04-25',cust:'Deek — Dreiband',rep:'Deek',notes:'SOLD'},
+{id:5023,stk:'',vin:'XTC15D231',model:'9458F — RX 500h F Sport P',status:'Allocated',eta:'2026-05-03',cust:'Deek — Gwynn, Ti.',rep:'Deek',notes:'SOLD'},
+{id:5024,stk:'',vin:'0T5084172',model:'9704F — GX 550 Luxury+',status:'Allocated',eta:'2026-05-13',cust:'Deek — Salisbury',rep:'Deek',notes:'SOLD'},
+{id:5025,stk:'',vin:'1T2017220',model:'9735F — UX 300h F Sport D',status:'Allocated',eta:'2026-05-13',cust:'JB — Brown, Kim',rep:'JB',notes:'SOLD'}];
+const MONTH_GOALS={'2026-04':{del:38,rdr:33,fpvr:1875,bpvr:1413,gross:131516,note:'April goals — using March targets as placeholder. Update when Lexus goals arrive.'},'2026-03':{del:38,rdr:42,fpvr:2000,bpvr:1200,gross:175000,note:'$175k gross goal is post-incentive. Front/back PVR goals are pre-incentive targets.'}};
+function getGoals(m){return MONTH_GOALS[m]||{del:40,rdr:42,fpvr:2000,bpvr:1200,gross:130000,note:''};}
+const MONTH_DAYS={'2026-04':30,'2026-03':31,'2026-02':28,'2026-01':31,'2025-12':31,'2025-11':30,'2025-10':31,'2025-09':30,'2025-08':31,'2025-07':31,'2025-06':30,'2025-05':31};
+const MONTH_LABELS={'2026-04':'April 2026','2026-03':'March 2026','2026-02':'February 2026','2026-01':'January 2026','2025-12':'December 2025','2025-11':'November 2025','2025-10':'October 2025','2025-09':'September 2025','2025-08':'August 2025','2025-07':'July 2025','2025-06':'June 2025','2025-05':'May 2025'};
+
+let curMonth='2026-04',deals=[],inv=[],goals=getGoals('2026-04');
+let editingDealId=null,editingInvId=null;
+
+// Status sort order: Delivered first, then Scheduled, Unscheduled, Freight, Allocated, Trade, Outside, everything else
+const STATUS_ORDER={Delivered:0,Scheduled:1,Unscheduled:2,Trade:3,Freight:4,Allocated:5,Outside:6};
+function statusRank(s){return STATUS_ORDER[s]!==undefined?STATUS_ORDER[s]:99;}
+
+// Sort state for deal log and dashboard
+let dealSort={col:'status',dir:1}; // dir: 1=asc, -1=desc
+let dashSort={col:'status',dir:1};
+
+function sortDeals(col){
+  if(dealSort.col===col){dealSort.dir*=-1;}else{dealSort.col=col;dealSort.dir=1;}
+  renderDeals();
+}
+function sortDash(col){
+  if(dashSort.col===col){dashSort.dir*=-1;}else{dashSort.col=col;dashSort.dir=1;}
+  renderDashboard();
+}
+
+function applySortDeals(arr){
+  const {col,dir}=dealSort;
+  return [...arr].sort((a,b)=>{
+    let av,bv;
+    if(col==='status'){av=statusRank(a.status);bv=statusRank(b.status);}
+    else if(col==='rdr'){av=a.rdr||'';bv=b.rdr||'';}
+    else if(col==='date'){av=a.date||'';bv=b.date||'';}
+    else if(col==='del'){av=a.del||'';bv=b.del||'';}
+    else if(col==='cust'){av=(a.cust||'').toLowerCase();bv=(b.cust||'').toLowerCase();}
+    else if(col==='rep'){av=a.rep||'';bv=b.rep||'';}
+    else if(col==='front'){av=a.front||0;bv=b.front||0;}
+    else if(col==='back'){av=a.back||0;bv=b.back||0;}
+    else if(col==='total'){av=(a.front||0)+(a.back||0);bv=(b.front||0)+(b.back||0);}
+    else if(col==='term'){av=a.term||'';bv=b.term||'';}
+    else if(col==='stk'){av=a.stk||'';bv=b.stk||'';}
+    else if(col==='eta'){av=a.eta||'';bv=b.eta||'';}
+    else{av=a[col]||'';bv=b[col]||'';}
+    if(av<bv)return -1*dir;if(av>bv)return 1*dir;return 0;
+  });
+}
+function applySortDash(arr){
+  const {col,dir}=dashSort;
+  return [...arr].sort((a,b)=>{
+    let av,bv;
+    if(col==='status'){av=statusRank(a.status);bv=statusRank(b.status);}
+    else if(col==='rdr'){av=a.rdr||'';bv=b.rdr||'';}
+    else if(col==='del'){av=(a.del||a.rdr||'');bv=(b.del||b.rdr||'');}
+    else if(col==='cust'){av=(a.cust||'').toLowerCase();bv=(b.cust||'').toLowerCase();}
+    else if(col==='rep'){av=a.rep||'';bv=b.rep||'';}
+    else if(col==='front'){av=a.front||0;bv=b.front||0;}
+    else if(col==='back'){av=a.back||0;bv=b.back||0;}
+    else if(col==='total'){av=(a.front||0)+(a.back||0);bv=(b.front||0)+(b.back||0);}
+    else if(col==='stk'){av=a.stk||'';bv=b.stk||'';}
+    else{av=a[col]||'';bv=b[col]||'';}
+    if(av<bv)return -1*dir;if(av>bv)return 1*dir;return 0;
+  });
+}
+function thD(label,col){const active=dealSort.col===col;const arrow=active?(dealSort.dir===1?' ▲':' ▼'):'';return `<th onclick="sortDeals('${col}')" style="cursor:pointer;user-select:none${active?';color:#185FA5':''}">${label}${arrow}</th>`;}
+function thDash(label,col){const active=dashSort.col===col;const arrow=active?(dashSort.dir===1?' ▲':' ▼'):'';return `<th onclick="sortDash('${col}')" style="cursor:pointer;user-select:none${active?';color:#185FA5':''}">${label}${arrow}</th>`;}
+
+function loadMonth(m){
+  if(m==='2026-04'){
+    // Try localStorage first (has user edits), fall back to seed
+    try{
+      const saved=localStorage.getItem('hlf_deals_apr');
+      if(saved){
+        const savedDeals=JSON.parse(saved);
+        // Only use localStorage if it has at least as many deals as seed
+        // and has deals from this month
+        if(savedDeals.length>=APRIL_SEED.length){
+          deals=savedDeals;
+        }else{
+          deals=JSON.parse(JSON.stringify(APRIL_SEED));
+        }
+      }else{
+        deals=JSON.parse(JSON.stringify(APRIL_SEED));
+      }
+    }catch(e){deals=JSON.parse(JSON.stringify(APRIL_SEED));}
+    try{inv=JSON.parse(localStorage.getItem('hlf_inv_apr')||'null')||JSON.parse(JSON.stringify(APRIL_INV));}catch(e){inv=JSON.parse(JSON.stringify(APRIL_INV));}
+    if(!inv.length)inv=JSON.parse(JSON.stringify(APRIL_INV));
+    try{const g=JSON.parse(localStorage.getItem('hlf_goals_apr')||'null');if(g)goals=g;else goals=getGoals(m);}catch(e){goals=getGoals(m);}
+  }else if(m==='2026-03'){
+    // Load from localStorage if available, otherwise use seed
+    // Seed is master - always load from seed
+    deals=JSON.parse(JSON.stringify(MARCH_SEED));
+    // Apply user edits from localStorage for existing deals
+    try{
+      const saved=localStorage.getItem('hlf_deals');
+      if(saved){
+        const savedDeals=JSON.parse(saved);
+        const seedIds=new Set(deals.map(d=>d.id));
+        const seedStks=new Set(deals.filter(d=>d.stk).map(d=>d.stk));
+        // Update existing seed deals with user edits
+        deals.forEach(d=>{
+          const s=savedDeals.find(x=>x.id===d.id)||(d.stk?savedDeals.find(x=>x.stk===d.stk):null);
+          if(s){
+            if(d.status==='Delivered'||d.status==='Outside'){
+              // Lock delivered status, only update financials/comments
+              if(s.front!==0)d.front=s.front;
+              if(s.back!==0)d.back=s.back;
+              if(s.term)d.term=s.term;
+              if(s.trade)d.trade=s.trade;
+              if(s.comments)d.comments=s.comments;
+              if(s.rdr)d.rdr=s.rdr;
+              if(s.rdrPrev)d.rdrPrev=s.rdrPrev;
+            } else {
+              // Pipeline: take user edits but keep seed cust/rep/stk
+              const cust=d.cust,rep=d.rep,stk=d.stk,id=d.id;
+              Object.assign(d,s);
+              d.id=id;d.stk=stk||s.stk;d.cust=cust;d.rep=rep;
+            }
+          }
+        });
+        // Add truly new user-added deals (not in seed)
+        savedDeals.forEach(s=>{
+          const inSeed=seedIds.has(s.id)||(s.stk&&seedStks.has(s.stk));
+          if(!inSeed)deals.push(s);
+        });
+      }
+    }catch(e){}
+    saveMarch();
+    try{inv=JSON.parse(localStorage.getItem('hlf_inv')||'null')||JSON.parse(JSON.stringify(MARCH_INV));}catch(e){inv=JSON.parse(JSON.stringify(MARCH_INV));}
+    if(!inv.length)inv=JSON.parse(JSON.stringify(MARCH_INV));
+    try{const g=JSON.parse(localStorage.getItem('hlf_goals')||'null');if(g)goals=g;else goals=getGoals(m);}catch(e){goals=getGoals(m);}
+  }else if(HIST[m]){deals=JSON.parse(JSON.stringify(HIST[m]||[]));inv=[];goals=getGoals(m);}else{deals=[];inv=[];goals=getGoals(m);}
+}
+function saveMarch(){
+  try{
+    if(curMonth==='2026-03'){
+      localStorage.setItem('hlf_deals',JSON.stringify(deals));
+      localStorage.setItem('hlf_inv',JSON.stringify(inv));
+    }else if(curMonth==='2026-04'){
+      localStorage.setItem('hlf_deals_apr',JSON.stringify(deals));
+      localStorage.setItem('hlf_inv_apr',JSON.stringify(inv));
+    }
+  }catch(e){console.warn('Save failed:',e);}
+}
+function saveGoals(){goals={del:+document.getElementById('g-del').value||38,rdr:+document.getElementById('g-rdr').value||42,fpvr:+document.getElementById('g-fpvr').value||2000,bpvr:+document.getElementById('g-bpvr').value||1200,gross:+document.getElementById('g-gross').value||175000};if(curMonth==='2026-04')localStorage.setItem('hlf_goals_apr',JSON.stringify(goals));else if(curMonth==='2026-03')localStorage.setItem('hlf_goals',JSON.stringify(goals));renderAll();}
+function switchMonth(m){curMonth=m;loadMonth(m);cancelDealEdit();cancelInvEdit();qeId=null;const isLive=m==='2026-04';const isCurrent=isLive||m==='2026-03';document.getElementById('month-badge').textContent=isLive?'live':(m==='2026-03'?'march final':'historical');document.getElementById('deal-form-wrap').style.display=isLive?'block':'none';const b=document.getElementById('hist-banner');if(!isCurrent){b.style.display='block';b.textContent=MONTH_LABELS[m]+' — historical view, read-only.';}else b.style.display='none';renderAll();}
+function populateSelects(){['f-rep','i-rep'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=REPS.map(r=>`<option value="${r.init}">${r.init} — ${r.name}</option>`).join('');});['fil-rep','i-fil-rep'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML='<option value="">All reps</option>'+REPS.map(r=>`<option value="${r.init}">${r.init} — ${r.name}</option>`).join('');});}
+// Delivered internally = del date in this month (or rdr if no del date set)
+// RDR for Lexus = rdr date in this month
+// Pipeline deals = show if their eta or rdr date is in this month
+function mDeals(){
+  return deals.filter(d=>{
+    if(d.status==='Delivered'||d.status==='Outside'){
+      return (d.del||d.rdr||'').slice(0,7)===curMonth;
+    }
+    // Pipeline deals always show in the current live month
+    return true;
+  });
+}
+function cumDel(){
+  const s=[...deals].filter(d=>(d.status==='Delivered'||d.status==='Outside')&&(d.del||d.rdr||'').slice(0,7)===curMonth)
+    .sort((a,b)=>((a.del||a.rdr||'')<(b.del||b.rdr||'')?-1:1));
+  let c=0,m={};s.forEach(d=>{c++;m[d.id]=c;});return m;
+}
+function cumRdr(){
+  const s=[...deals].filter(d=>d.rdr&&d.rdr.slice(0,7)===curMonth&&d.status!=='Outside'&&!d.rdrPrev)
+    .sort((a,b)=>a.rdr<b.rdr?-1:1);
+  let c=0,m={};s.forEach(d=>{c++;m[d.id]=c;});return m;
+}
+function gv(id){return document.getElementById(id).value;}
+function sv(id,v){document.getElementById(id).value=v||'';}
+function getDealFromForm(){return{date:gv('f-rdr')||today(),rdr:gv('f-rdr'),cust:gv('f-cust').trim(),rep:gv('f-rep'),model:gv('f-model').split(' — ')[0],stk:gv('f-stk').trim(),vin:gv('f-vin').trim(),status:gv('f-status'),term:gv('f-term'),front:parseFloat(gv('f-front'))||0,back:parseFloat(gv('f-back'))||0,bonus:0,trade:gv('f-trade'),del:gv('f-del'),eta:gv('f-eta'),comments:gv('f-comments').trim()};}
+function fillDealForm(d){sv('f-rdr',d.rdr);sv('f-cust',d.cust);sv('f-rep',d.rep);document.getElementById('f-model').value=d.model||'';sv('f-stk',d.stk);sv('f-vin',d.vin);document.getElementById('f-status').value=d.status||'Delivered';document.getElementById('f-term').value=d.term||'Finance';sv('f-front',d.front||'');sv('f-back',d.back||'');document.getElementById('f-trade').value=d.trade||'No';sv('f-del',d.del);sv('f-eta',d.eta);sv('f-comments',d.comments);}
+function submitDeal(){if(curMonth!=='2026-03'&&curMonth!=='2026-04')return;const d=getDealFromForm();if(!d.cust){alert('Customer name required.');return;}if(d.del&&['Unscheduled','Freight','Allocated','Trade'].includes(d.status))d.status='Scheduled';if(editingDealId!==null){const idx=deals.findIndex(x=>x.id===editingDealId);if(idx>-1){deals[idx]={...deals[idx],...d};}editingDealId=null;}else{deals.unshift({id:Date.now(),...d});}saveMarch();cancelDealEdit();renderAll();}
+function editDeal(id){if(curMonth!=='2026-03'&&curMonth!=='2026-04')return;id=String(id);const d=deals.find(x=>String(x.id)===id);if(!d)return;editingDealId=id;fillDealForm(d);document.getElementById('deal-form-panel').classList.add('editing');document.getElementById('deal-submit-btn').textContent='Save changes';document.getElementById('deal-submit-btn').className='btn btn-save';document.getElementById('deal-edit-indicator').style.display='inline';document.getElementById('deal-form-title').textContent='Edit deal — '+d.cust;document.getElementById('deal-form-wrap').scrollIntoView({behavior:'smooth',block:'start'});renderDeals();}
+function cancelDealEdit(){editingDealId=null;document.getElementById('deal-form-panel').classList.remove('editing');document.getElementById('deal-submit-btn').textContent='Add deal';document.getElementById('deal-submit-btn').className='btn btn-primary';document.getElementById('deal-edit-indicator').style.display='none';document.getElementById('deal-form-title').textContent='Add a deal';['f-rdr','f-cust','f-stk','f-vin','f-front','f-back','f-del','f-eta','f-comments'].forEach(x=>sv(x,''));document.getElementById('f-model').value='';document.getElementById('f-status').value='Delivered';renderDeals();}
+function deleteDeal(id){if(curMonth!=='2026-03'&&curMonth!=='2026-04')return;id=String(id);if(String(editingDealId)===id)cancelDealEdit();if(!confirm('Remove this deal?'))return;deals=deals.filter(d=>String(d.id)!==String(id));saveMarch();renderAll();}
+function getInvFromForm(){return{stk:gv('i-stk').trim(),vin:gv('i-vin').trim(),model:gv('i-model').trim(),status:gv('i-status'),eta:gv('i-eta'),cust:gv('i-cust').trim(),rep:gv('i-rep'),notes:gv('i-notes').trim()};}
+function fillInvForm(u){sv('i-stk',u.stk);sv('i-vin',u.vin);sv('i-model',u.model);document.getElementById('i-status').value=u.status||'Ground';sv('i-eta',u.eta);sv('i-cust',u.cust);sv('i-rep',u.rep);sv('i-notes',u.notes);}
+function toggleInvForm(){const f=document.getElementById('inv-form');f.style.display=f.style.display==='none'?'block':'none';}
+function submitInventory(){if(curMonth!=='2026-03'&&curMonth!=='2026-04')return;const u=getInvFromForm();if(!u.stk&&!u.vin){alert('Stock # or VIN required.');return;}if(editingInvId!==null){const idx=inv.findIndex(x=>x.id===editingInvId);if(idx>-1){inv[idx]={...inv[idx],...u};}editingInvId=null;}else{inv.unshift({id:Date.now(),...u});}saveMarch();cancelInvEdit();renderInventory();}
+function editInv(id){if(curMonth!=='2026-03'&&curMonth!=='2026-04')return;const u=inv.find(x=>x.id===id);if(!u)return;editingInvId=id;fillInvForm(u);document.getElementById('inv-form').style.display='block';document.getElementById('inv-form-panel').classList.add('editing');document.getElementById('inv-submit-btn').textContent='Save changes';document.getElementById('inv-submit-btn').className='btn btn-save';document.getElementById('inv-edit-indicator').style.display='inline';document.getElementById('inv-form').scrollIntoView({behavior:'smooth',block:'start'});renderInventory();}
+function cancelInvEdit(){editingInvId=null;document.getElementById('inv-form-panel').classList.remove('editing');document.getElementById('inv-submit-btn').textContent='Add unit';document.getElementById('inv-submit-btn').className='btn btn-primary';document.getElementById('inv-edit-indicator').style.display='none';['i-stk','i-vin','i-model','i-eta','i-cust','i-notes'].forEach(x=>sv(x,''));renderInventory();}
+function deleteInv(id){if(curMonth!=='2026-03'&&curMonth!=='2026-04')return;if(editingInvId===id)cancelInvEdit();if(!confirm('Remove unit?'))return;inv=inv.filter(u=>u.id!==id);saveMarch();renderInventory();}
+
+// ---- DASHBOARD QUICK-EDIT ----
+let qeId=null;
+
+function openQE(id){
+  if(curMonth!=='2026-03'&&curMonth!=='2026-04')return;
+  id=String(id);if(qeId===id){closeQE();return;}
+  qeId=id;
+  renderDashboard();
+}
+function closeQE(){qeId=null;renderDashboard();}
+
+function saveQE(){
+  if(!qeId||(curMonth!=='2026-03'&&curMonth!=='2026-04'))return;
+  const d=deals.find(x=>String(x.id)===String(qeId));if(!d)return;
+  d.status=document.getElementById('qe-status').value;
+  d.rdr=document.getElementById('qe-rdr').value||'';
+  d.date=d.rdr;
+  d.stk=document.getElementById('qe-stk').value.trim();
+  d.term=document.getElementById('qe-term').value;
+  d.front=parseFloat(document.getElementById('qe-front').value)||0;
+  d.back=parseFloat(document.getElementById('qe-back').value)||0;
+  d.trade=document.getElementById('qe-trade').value;
+  d.del=document.getElementById('qe-del').value||'';
+  d.comments=document.getElementById('qe-comments').value.trim();
+  if(d.del&&['Unscheduled','Freight','Allocated','Trade'].includes(d.status))d.status='Scheduled';
+  // Auto-mark delivered if front or back gross entered
+  if((d.front!==0||d.back!==0)&&d.status!=='Outside')d.status='Delivered';
+  qeId=null;
+  saveMarch();
+  renderAll();
+}
+function renderDashboard(){
+  const md=mDeals();
+  // Delivered = status Delivered OR Outside, delivery date in this month
+  const del=deals.filter(d=>(d.status==='Delivered'||d.status==='Outside')&&(d.del||d.rdr||'').slice(0,7)===curMonth);
+  // RDR = Lexus brand count: rdr date in this month, excluding Outside lien
+  const rdrD=deals.filter(d=>d.rdr&&d.rdr.slice(0,7)===curMonth&&d.status!=='Outside'&&!d.rdrPrev);
+  const tF=del.reduce((s,d)=>s+d.front,0),tB=del.reduce((s,d)=>s+d.back,0),tG=tF+tB;
+  const n=del.length||1,fPvr=tF/n,bPvr=tB/n,pvr=tG/n;
+  const trades=del.filter(d=>d.trade==='Yes').length;
+  const totalDays=MONTH_DAYS[curMonth]||30,isCurrent=curMonth==='2026-03'||curMonth==='2026-04';
+  const day=isCurrent?new Date().getDate():totalDays;
+  const dLeft=isCurrent?(totalDays-day):0;
+  // Projected delivered = current delivered + scheduled (not yet delivered)
+  const eom2=curMonth+'-31';const schedDel=deals.filter(d=>['Scheduled','Unscheduled'].includes(d.status)&&(d.del||d.rdr||d.eta||'').slice(0,7)===curMonth);
+  const projDel=del.length+schedDel.length;
+  // Projected RDR = current RDR + ALL pipeline deals (Scheduled/Unscheduled/Trade) not yet RDR'd
+  const eom=curMonth+'-31';const pipelineRdr=deals.filter(d=>['Scheduled','Unscheduled','Freight','Trade'].includes(d.status)&&(d.rdr||d.del||d.eta||d.date||'').slice(0,7)===curMonth&&!d.rdrPrev&&(d.eta||d.del||d.rdr||d.date||'9')<=eom);
+  const projRdr=rdrD.length+pipelineRdr.length;
+  const needed=goals.del>del.length&&dLeft>0?Math.ceil((goals.del-del.length)/dLeft):0;
+  document.getElementById('dash-metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">Delivered</div><div class="metric-value mv-blue">${del.length}<span style="font-size:12px;color:#888"> / ${goals.del}</span></div><div class="metric-sub">internal goal</div></div>
+    <div class="metric"><div class="metric-label">RDR</div><div class="metric-value mv-green">${rdrD.length}<span style="font-size:12px;color:#888"> / ${goals.rdr}</span></div><div class="metric-sub">Lexus goal</div></div>
+    <div class="metric"><div class="metric-label">Front gross</div><div class="metric-value mv-blue">${fmt$(tF)}</div><div class="metric-sub">PVR ${fmt$(fPvr)}</div></div>
+    <div class="metric"><div class="metric-label">Back gross</div><div class="metric-value mv-green">${fmt$(tB)}</div><div class="metric-sub">PVR ${fmt$(bPvr)}</div></div>
+    <div class="metric"><div class="metric-label">Total gross</div><div class="metric-value mv-green">${fmt$(tG)}</div><div class="metric-sub">goal ${fmt$(goals.gross)}</div></div>
+    <div class="metric"><div class="metric-label">Front PVR</div><div class="metric-value ${fPvr>=goals.fpvr?'mv-green':'mv-amber'}">${fmt$(fPvr)}</div><div class="metric-sub">goal ${fmt$(goals.fpvr)}</div></div>
+    <div class="metric"><div class="metric-label">Back PVR</div><div class="metric-value ${bPvr>=goals.bpvr?'mv-green':'mv-amber'}">${fmt$(bPvr)}</div><div class="metric-sub">goal ${fmt$(goals.bpvr)}</div></div>
+    <div class="metric"><div class="metric-label">Total PVR</div><div class="metric-value ${pvr>=(goals.fpvr+goals.bpvr)?'mv-green':'mv-amber'}">${fmt$(pvr)}</div><div class="metric-sub">goal ${fmt$(goals.fpvr+goals.bpvr)}</div></div>
+    <div class="metric"><div class="metric-label">Trades</div><div class="metric-value">${trades}</div></div>
+    ${isCurrent?`<div class="metric"><div class="metric-label">Days left</div><div class="metric-value">${dLeft}</div><div class="metric-sub">${needed}/day needed</div></div><div class="metric"><div class="metric-label">Proj delivered</div><div class="metric-value ${projDel>=goals.del?'mv-green':'mv-red'}">${projDel}</div><div class="metric-sub">+${schedDel.length} sched</div></div><div class="metric"><div class="metric-label">Proj RDR</div><div class="metric-value ${projRdr>=goals.rdr?'mv-green':'mv-amber'}">${projRdr}</div><div class="metric-sub">+${pipelineRdr.length} pipeline</div></div>`:''}
+  `;
+  document.getElementById('dash-pace').innerHTML=`
+    <div class="pace-card"><div class="pace-title">Delivered vs goal (${goals.del})</div><div class="pace-nums"><span class="pace-actual">${del.length}</span><span class="pace-goal">${isCurrent?'proj '+projDel:'final'}</span></div>${pb(del.length,goals.del,'#1D9E75')}</div>
+    <div class="pace-card"><div class="pace-title">RDR vs goal (${goals.rdr})</div><div class="pace-nums"><span class="pace-actual">${rdrD.length}</span><span class="pace-goal">${isCurrent?'proj '+projRdr:'goal '+goals.rdr}</span></div>${pb(rdrD.length,goals.rdr,'#185FA5')}</div>
+    <div class="pace-card"><div class="pace-title">Total gross vs goal</div><div class="pace-nums"><span class="pace-actual">${fmt$(tG)}</span><span class="pace-goal">${fmt$(goals.gross)}</span></div>${pb(tG,goals.gross,'#534AB7')}</div>
+    <div class="pace-card"><div class="pace-title">Front PVR vs goal</div><div class="pace-nums"><span class="pace-actual">${fmt$(fPvr)}</span><span class="pace-goal">goal ${fmt$(goals.fpvr)}</span></div>${pb(fPvr,goals.fpvr,'#BA7517')}</div>
+    <div class="pace-card"><div class="pace-title">Back PVR vs goal</div><div class="pace-nums"><span class="pace-actual">${fmt$(bPvr)}</span><span class="pace-goal">goal ${fmt$(goals.bpvr)}</span></div>${pb(bPvr,goals.bpvr,'#993C1D')}</div>
+  `;
+  document.getElementById('dash-rep-title').textContent=(MONTH_LABELS[curMonth]||curMonth)+' — rep breakdown';
+  document.getElementById('dash-reps').innerHTML=REPS.filter(r=>r.init!=='RS').map(r=>{
+    const rd=del.filter(d=>d.rep===r.init),f=rd.reduce((s,d)=>s+d.front,0),b=rd.reduce((s,d)=>s+d.back,0);
+    return `<div class="rep-card" style="background:${r.bg};border-color:${r.bc}40"><div class="rep-name" style="color:${r.tc}">${r.init} — ${r.name.split(' ')[0]}</div><div class="rep-stats" style="color:${r.tc}">${rd.length} del${(f||b)?(' · F:'+fmt$(f)+' B:'+fmt$(b)):''}</div></div>`;
+  }).join('');
+  document.getElementById('dash-thead').querySelector('tr').innerHTML=
+    `<th style="color:#aaa;width:24px">#</th>`+
+    thDash('RDR date','rdr')+thDash('Del date','del')+thDash('Customer','cust')+
+    `<th>Model</th>`+thDash('Stk#','stk')+thDash('Rep','rep')+thDash('Status','status')+
+    `<th>Term</th>`+thDash('Front','front')+thDash('Back','back')+thDash('Total','total')+
+    `<th>Trade</th><th>Comments</th>`;
+  const sorted=applySortDash(md);
+  let rowNum=0;
+  const isCur=curMonth==='2026-03'||curMonth==='2026-04';
+  const repOpts=REPS.map(r=>`<option value="${r.init}">${r.init} — ${r.name}</option>`).join('');
+  let rows='';
+  sorted.forEach(d=>{
+    rowNum++;
+    const t=d.front+d.back,isQE=d.id===qeId;
+    rows+=`<tr class="dash-row${isQE?' qe-active':''}" onclick="${isCur?`openQE('${d.id}')`:''}">
+      <td style="color:#aaa;font-size:10px;text-align:center;padding:0 4px">${rowNum}</td><td>${d.status!=='Outside'?(d.rdr||(d.rdrPrev?'':'')):''}${d.rdrPrev?'<span style="font-size:10px;color:#BA7517;margin-left:3px">↩feb</span>':''}</td><td>${d.del?(d.status==='Delivered'||d.status==='Outside'?d.del:`<span style="background:#FAEEDA;color:#854F0B;padding:1px 5px;border-radius:3px;font-weight:500">${d.del}</span>`):''}</td><td>${d.cust}</td>
+      <td style="font-size:11px;color:#888">${d.model||''}</td><td>${d.stk||''}</td>
+      <td>${repTag(d.rep)}</td><td>${stTag(d.status)}</td>
+      <td style="font-size:11px">${d.term||''}</td>
+      <td class="${d.front<0?'neg':d.front>0?'pos':''}">${d.front?fmt$(d.front):''}</td>
+      <td>${d.back?fmt$(d.back):(d.status==='Delivered'||d.status==='Outside'?'$0':'')}</td>      <td style="font-weight:500" class="${t<0?'neg':t>0?'pos':''}">${t?fmt$(t):''}</td>
+      <td>${d.trade==='Yes'?'<span class="tag" style="background:#FAEEDA;color:#854F0B">T</span>':''}</td>
+      <td style="color:#888;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${d.comments||''}</td>
+
+    </tr>`;
+    if(isQE){
+      rows+=`<tr class="qe-row"><td colspan="13"><div class="qe-panel">
+        <div class="qe-fg"><label>Status</label><select id="qe-status">
+          <option${d.status==='Delivered'?' selected':''}>Delivered</option>
+          <option${d.status==='Scheduled'?' selected':''}>Scheduled</option>
+          <option${d.status==='Unscheduled'?' selected':''}>Unscheduled</option>
+          <option${d.status==='Freight'?' selected':''}>Freight</option>
+          <option${d.status==='Allocated'?' selected':''}>Allocated</option>
+          <option${d.status==='Trade'?' selected':''}>Trade</option>
+          <option${d.status==='Outside'?' selected':''}>Outside</option>
+        </select></div>
+        <div class="qe-fg"><label>Stk#</label><input type="text" id="qe-stk" value="${d.stk||''}" style="min-width:90px"></div>
+        <div class="qe-fg"><label>RDR date</label><input type="date" id="qe-rdr" value="${d.rdr||''}"></div>
+        <div class="qe-fg"><label>Del date</label><input type="date" id="qe-del" value="${d.del||''}"></div>
+        <div class="qe-fg"><label>Term</label><select id="qe-term">
+          <option${d.term==='Finance'?' selected':''}>Finance</option>
+          <option${d.term==='Cash'?' selected':''}>Cash</option>
+          <option${d.term==='Lease'?' selected':''}>Lease</option>
+          <option${d.term==='Outside lien'?' selected':''}>Outside lien</option>
+        </select></div>
+        <div class="qe-fg"><label>Front ($)</label><input type="number" id="qe-front" value="${d.front||''}"></div>
+        <div class="qe-fg"><label>Back ($)</label><input type="number" id="qe-back" value="${d.back||''}"></div>
+        <div class="qe-fg"><label>Trade?</label><select id="qe-trade">
+          <option${d.trade==='No'?' selected':''} value="No">No</option>
+          <option${d.trade==='Yes'?' selected':''} value="Yes">Yes</option>
+        </select></div>
+        <div class="qe-fg" style="min-width:160px"><label>Comments</label><input type="text" id="qe-comments" value="${(d.comments||'').replace(/"/g,'&quot;')}" style="min-width:160px"></div>
+        <div class="qe-actions">
+          <button class="qe-save" onclick="event.stopPropagation();saveQE()">Save</button>
+          <button class="qe-cancel" onclick="event.stopPropagation();closeQE()">Cancel</button>
+        </div>
+      </div></td></tr>`;
+    }
+  });
+  document.getElementById('dash-tbody').innerHTML=rows||`<tr><td colspan="13" style="text-align:center;padding:2rem;color:#888">No deals this month</td></tr>`;
+}
+
+function renderDeals(){
+  const sf=gv('fil-status'),rf=gv('fil-rep'),q=document.getElementById('fil-search').value.toLowerCase();
+  let f=[...deals];
+  if(sf)f=f.filter(d=>d.status===sf);if(rf)f=f.filter(d=>d.rep===rf);if(q)f=f.filter(d=>(d.cust+d.stk+(d.vin||'')).toLowerCase().includes(q));
+  f=applySortDeals(f);
+  document.getElementById('deals-thead').querySelector('tr').innerHTML=
+    thD('RDR','rdr')+thD('Del date','del')+thD('Customer','cust')+
+    `<th>Model</th>`+thD('Stk#','stk')+`<th>VIN</th>`+thD('Rep','rep')+thD('Status','status')+
+    thD('Term','term')+thD('Front','front')+thD('Back','back')+thD('Total','total')+
+    `<th>Trade</th>`+thD('ETA','eta')+`<th>Comments</th><th></th>`;
+  const isCurrent=curMonth==='2026-04'||curMonth==='2026-03';
+  document.getElementById('deals-tbody').innerHTML=f.map(d=>{
+    const t=d.front+d.back,isEditing=d.id===editingDealId||String(d.id)===String(editingDealId);
+    return `<tr class="${isEditing?'editing-row':''}"><td>${d.rdr||''}</td><td>${d.del?(d.status==='Delivered'||d.status==='Outside'?d.del:`<span style="background:#FAEEDA;color:#854F0B;padding:1px 5px;border-radius:3px;font-weight:500">${d.del}</span>`):''}</td><td>${d.cust}</td><td style="font-size:11px">${d.model||''}</td><td>${d.stk||''}</td><td style="font-size:11px">${d.vin||''}</td><td>${repTag(d.rep)}</td><td>${stTag(d.status)}</td><td style="font-size:11px">${d.term||''}</td><td class="${d.front<0?'neg':d.front>0?'pos':''}">${d.front?fmt$(d.front):''}</td><td>${d.back?fmt$(d.back):(d.status==='Delivered'||d.status==='Outside'?'$0':'')}</td><td style="font-weight:500" class="${t<0?'neg':t>0?'pos':''}">${t?fmt$(t):''}</td><td>${d.trade==='Yes'?'<span class="tag" style="background:#FAEEDA;color:#854F0B">T</span>':''}</td><td style="font-size:11px">${d.eta||''}</td><td style="color:#888;font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis">${d.comments||''}</td><td style="white-space:nowrap">${isCurrent?`<button class="row-btn edit-btn" onclick="editDeal('${d.id}')" title="Edit">✎</button><button class="row-btn del-btn" onclick="deleteDeal('${d.id}')" title="Delete">✕</button>`:''}</td></tr>`;
+  }).join('')||`<tr><td colspan="15" style="text-align:center;padding:2rem;color:#888">No deals match filter</td></tr>`;
+}
+
+function renderInventory(){
+  const sf=gv('i-fil-status'),rf=gv('i-fil-rep'),q=document.getElementById('i-fil-search').value.toLowerCase(),psOnly=document.getElementById('i-fil-presold').checked;
+  let f=[...inv];
+  if(sf)f=f.filter(u=>u.status===sf);if(rf)f=f.filter(u=>u.rep===rf);if(q)f=f.filter(u=>(u.stk+u.vin+u.model).toLowerCase().includes(q));if(psOnly)f=f.filter(u=>u.notes&&u.notes.toUpperCase().includes('SOLD'));
+  const g=inv.filter(u=>u.status==='Ground').length,fr=inv.filter(u=>u.status==='Freight').length,al=inv.filter(u=>u.status==='Allocated').length,ps=inv.filter(u=>u.notes&&u.notes.toUpperCase().includes('SOLD')).length;
+  const isCurrent=curMonth==='2026-03'||curMonth==='2026-04';
+  document.getElementById('inv-summary').innerHTML=`
+    <div class="metric" style="min-width:80px"><div class="metric-label">Ground</div><div class="metric-value mv-green">${g}</div></div>
+    <div class="metric" style="min-width:80px"><div class="metric-label">Freight</div><div class="metric-value mv-amber">${fr}</div></div>
+    <div class="metric" style="min-width:80px"><div class="metric-label">Allocated</div><div class="metric-value mv-blue">${al}</div></div>
+    <div class="metric" style="min-width:80px"><div class="metric-label">Total</div><div class="metric-value">${g+fr+al}</div></div>
+    <div class="metric" style="min-width:80px"><div class="metric-label">Pre-sold</div><div class="metric-value mv-green">${ps}</div></div>
+    <div class="metric" style="min-width:80px"><div class="metric-label">Available</div><div class="metric-value">${g+fr+al-ps}</div></div>
+  `;
+  document.getElementById('inv-tbody').innerHTML=f.length?f.map(u=>{
+    const sc=ISC[u.status]||{bg:'#F1EFE8',tc:'#5F5E5A'},presold=u.notes&&u.notes.toUpperCase().includes('SOLD'),isEditing=u.id===editingInvId;
+    return `<tr class="${presold?'presold-row':''} ${isEditing?'editing-row':''}"><td><span class="tag" style="background:${sc.bg};color:${sc.tc}">${u.status}</span></td><td style="font-weight:500">${u.stk||'—'}</td><td style="font-size:11px">${u.vin||''}</td><td style="font-size:12px">${u.model||''}</td><td>${u.eta||''}</td><td>${u.rep?repTag(u.rep):''}</td><td style="font-size:12px">${u.cust||''}</td><td style="color:#888;font-size:11px">${u.notes||''}</td><td style="white-space:nowrap">${isCurrent?`<button class="row-btn edit-btn" onclick="editInv(${u.id})" title="Edit">✎</button><button class="row-btn del-btn" onclick="deleteInv(${u.id})" title="Delete">✕</button>`:''}</td></tr>`;
+  }).join(''):`<tr><td colspan="9" style="text-align:center;padding:2rem;color:#888">No inventory data for this month</td></tr>`;
+}
+
+function renderGoals(){
+  document.getElementById('goals-title').textContent=(MONTH_LABELS[curMonth]||curMonth)+' goals';
+  const note=MONTH_GOALS[curMonth]?.note||'';
+  document.getElementById('goals-note').textContent=note;
+  document.getElementById('goals-note').style.display=note?'block':'none';
+  const isCurrent=curMonth==='2026-03'||curMonth==='2026-04';
+  document.getElementById('goals-grid').innerHTML=`
+    <div class="goal-item"><label>Delivered (internal)</label><input type="number" id="g-del" value="${goals.del}" ${isCurrent?'onchange="saveGoals()"':'readonly'}></div>
+    <div class="goal-item"><label>RDR (Lexus)</label><input type="number" id="g-rdr" value="${goals.rdr}" ${isCurrent?'onchange="saveGoals()"':'readonly'}></div>
+    <div class="goal-item"><label>Front PVR goal ($)</label><input type="number" id="g-fpvr" value="${goals.fpvr}" ${isCurrent?'onchange="saveGoals()"':'readonly'}></div>
+    <div class="goal-item"><label>Back PVR goal ($)</label><input type="number" id="g-bpvr" value="${goals.bpvr}" ${isCurrent?'onchange="saveGoals()"':'readonly'}></div>
+    <div class="goal-item"><label>Total gross goal ($)</label><input type="number" id="g-gross" value="${goals.gross}" ${isCurrent?'onchange="saveGoals()"':'readonly'}></div>
+  `;
+  const del=deals.filter(d=>(d.status==='Delivered'||d.status==='Outside')&&(d.del||d.rdr||'').slice(0,7)===curMonth),
+        rdrC=deals.filter(d=>d.rdr&&d.rdr.slice(0,7)===curMonth&&d.status!=='Outside'&&!d.rdrPrev).length,n=del.length||1;
+  const tg=del.reduce((s,d)=>s+d.front+d.back,0),fg=del.reduce((s,d)=>s+d.front,0),bg=del.reduce((s,d)=>s+d.back,0);
+  document.getElementById('goals-pace').innerHTML=`
+    <div class="pace-card"><div class="pace-title">Delivered (${del.length} / ${goals.del})</div><div class="pace-nums"><span class="pace-actual">${del.length}</span><span class="pace-goal">goal ${goals.del}</span></div>${pb(del.length,goals.del,'#1D9E75')}</div>
+    <div class="pace-card"><div class="pace-title">RDR (${rdrC} / ${goals.rdr})</div><div class="pace-nums"><span class="pace-actual">${rdrC}</span><span class="pace-goal">goal ${goals.rdr}</span></div>${pb(rdrC,goals.rdr,'#185FA5')}</div>
+    <div class="pace-card"><div class="pace-title">Total gross</div><div class="pace-nums"><span class="pace-actual">${fmt$(tg)}</span><span class="pace-goal">${fmt$(goals.gross)}</span></div>${pb(tg,goals.gross,'#534AB7')}</div>
+    <div class="pace-card"><div class="pace-title">Front PVR</div><div class="pace-nums"><span class="pace-actual">${fmt$(fg/n)}</span><span class="pace-goal">goal ${fmt$(goals.fpvr)}</span></div>${pb(fg/n,goals.fpvr,'#BA7517')}</div>
+    <div class="pace-card"><div class="pace-title">Back PVR</div><div class="pace-nums"><span class="pace-actual">${fmt$(bg/n)}</span><span class="pace-goal">goal ${fmt$(goals.bpvr)}</span></div>${pb(bg/n,goals.bpvr,'#993C1D')}</div>
+    <div class="pace-card"><div class="pace-title">Total PVR</div><div class="pace-nums"><span class="pace-actual">${fmt$(tg/n)}</span><span class="pace-goal">goal ${fmt$(goals.fpvr+goals.bpvr)}</span></div>${pb(tg/n,goals.fpvr+goals.bpvr,'#0F6E56')}</div>
+  `;
+}
+
+function exportData(){
+  const payload={deals,inv,goals,exported:new Date().toISOString(),month:curMonth};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='harvey_lexus_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importData(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const payload=JSON.parse(e.target.result);
+      if(payload.deals&&Array.isArray(payload.deals)){
+        deals=payload.deals;
+        const month=payload.month||curMonth;
+        if(month==='2026-04'){
+          localStorage.setItem('hlf_deals_apr',JSON.stringify(deals));
+        }else{
+          localStorage.setItem('hlf_deals',JSON.stringify(deals));
+        }
+        curMonth=month;
+        document.getElementById('month-picker').value=month;
+      }
+      if(payload.inv&&Array.isArray(payload.inv)){
+        inv=payload.inv;
+        const month=payload.month||curMonth;
+        if(month==='2026-04'){
+          localStorage.setItem('hlf_inv_apr',JSON.stringify(inv));
+        }else{
+          localStorage.setItem('hlf_inv',JSON.stringify(inv));
+        }
+      }
+      if(payload.goals){
+        goals=payload.goals;
+        const month=payload.month||curMonth;
+        if(month==='2026-04'){
+          localStorage.setItem('hlf_goals_apr',JSON.stringify(goals));
+        }else{
+          localStorage.setItem('hlf_goals',JSON.stringify(goals));
+        }
+      }
+      input.value='';
+      renderAll();
+      alert('Data imported successfully! '+deals.length+' deals loaded.');
+    }catch(err){alert('Import failed — file may be corrupted.\n'+err);}
+  };
+  reader.readAsText(file);
+}
+
+function makeResizable(table){
+  if(!table)return;
+  table.querySelectorAll('th').forEach(th=>{
+    th.style.position='relative';
+    const old=th.querySelector('.rsz');if(old)old.remove();
+    const r=document.createElement('div');
+    r.className='rsz';
+    r.style.cssText='position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;z-index:2;';
+    r.addEventListener('mousedown',e=>{
+      const startX=e.pageX,startW=th.offsetWidth;
+      r.style.background='#185FA5';
+      const move=e=>{th.style.width=Math.max(20,startW+e.pageX-startX)+'px';th.style.minWidth=th.style.width;};
+      const up=()=>{r.style.background='';document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);};
+      document.addEventListener('mousemove',move);
+      document.addEventListener('mouseup',up);
+      e.preventDefault();e.stopPropagation();
+    });
+    r.addEventListener('mouseover',()=>r.style.background='#93C5E8');
+    r.addEventListener('mouseout',()=>r.style.background='');
+    th.appendChild(r);
+  });
+}
+
+function renderAll(){renderDashboard();renderDeals();renderInventory();renderGoals();makeResizable(document.querySelector("#tab-dashboard table"));makeResizable(document.querySelector("#tab-deals table"));}
+function switchTab(name,btn){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');renderAll();}
+
+populateSelects();
+loadMonth('2026-04');
+renderAll();
+</script>
+</body>
+</html>
