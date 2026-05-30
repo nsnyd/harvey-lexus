@@ -106,6 +106,38 @@ const REPS = {
 const GP = {fp:1875,bp:1413,tp:3288};
 const TABS = [['db','Dashboard'],['dl','Deals'],['rp','Reps'],['tr','Trends']];
 
+// Model family classifier
+function modelFamily(comments) {
+  var c = (comments||'').toUpperCase().replace(/\s+/g,'');
+  if (c.indexOf('LC5')>=0) return 'LC 500';
+  if (c.indexOf('LX7')>=0) return 'LX 700h';
+  if (c.indexOf('LX6')>=0) return 'LX 600';
+  if (c.indexOf('GX5')>=0) return 'GX 550';
+  if (c.indexOf('TX5')>=0||c.indexOf('TX 5')>=0) return 'TX 500h';
+  if (c.indexOf('TX3')>=0||c.indexOf('TX 3')>=0||c.indexOf('TXFSPO')>=0) return 'TX 350';
+  if (c.indexOf('RX5')>=0) return 'RX 500h';
+  if (c.indexOf('450H')>=0&&c.indexOf('RX')>=0) return 'RX 450h+';
+  if (c.indexOf('350H')>=0&&c.indexOf('RX')>=0) return 'RX 350h';
+  if (c.indexOf('350')>=0&&c.indexOf('RX')>=0) return 'RX 350';
+  if (c.indexOf('450H')>=0&&c.indexOf('NX')>=0) return 'NX 450h+';
+  if (c.indexOf('350H')>=0&&c.indexOf('NX')>=0) return 'NX 350h';
+  if (c.indexOf('NX3')>=0||c.indexOf('NX 3')>=0) return 'NX 350';
+  if (c.indexOf('IS5')>=0) return 'IS 500';
+  if (c.indexOf('IS3')>=0) return 'IS 350';
+  if (c.indexOf('ES3')>=0||c.indexOf('ES 3')>=0) return 'ES 350';
+  if (c.indexOf('ES300')>=0) return 'ES 300h';
+  if (c.indexOf('UX3')>=0||c.indexOf('UX 3')>=0) return 'UX 300h';
+  if (c.indexOf('LS5')>=0) return 'LS 500';
+  if (c.indexOf('RC3')>=0) return 'RC 350';
+  if (c.indexOf('RZ')>=0) return 'RZ';
+  return 'Other';
+}
+
+// Model family sort order
+var MODEL_ORDER = ['RX 350h','RX 350','RX 500h','RX 450h+','GX 550','TX 350','TX 500h',
+  'NX 350h','NX 350','NX 450h+','LX 600','LX 700h','LC 500','IS 350','IS 500',
+  'ES 350','ES 300h','UX 300h','LS 500','RC 350','RZ','Other'];
+
 let CUR='2026-05', TAB='db', RF='ALL', TV='13mo', TM='tpvr';
 let CH={};
 
@@ -152,10 +184,10 @@ function banner(s){
   var h='<div class="banner">';
   h+='<span class="bni"><span class="bnl">RDR\u00a0</span>'+s.rdr+' <span class="bnl">/ </span>'+s.goal;
   h+=' <span class="badge '+(ok?'bdg-gn':'bdg-rd')+'">'+(ok?'\u2713 HIT':s.rdr-s.goal)+'</span></span>';
-  h+='<span class="bni"><span class="bnl">DMS delivered\u00a0</span>'+s.u+'</span>';
-  if(gap)h+='<span class="bni"><span class="bnl">Not RDR\u2019d\u00a0</span>'+gap+' <span class="badge bdg-am">pending</span></span>';
+  h+='<span class="bni"><span class="bnl">DMS\u00a0</span>'+s.u+'</span>';
+  if(gap)h+='<span class="bni"><span class="bnl">Pending RDR\u00a0</span>'+gap+'</span>';
   h+='<span class="bni"><span class="bnl">TPVR\u00a0</span>'+f$(s.tpvr);
-  h+=' <span class="badge '+(s.tpvr>=GP.tp?'bdg-gn':'bdg-rd')+'">'+(s.tpvr>=GP.tp?'\u25b2':'▼')+'goal</span></span>';
+  h+=' <span class="badge '+(s.tpvr>=GP.tp?'bdg-gn':'bdg-rd')+'">'+(s.tpvr>=GP.tp?'\u25b2':'\u25bc')+'</span></span>';
   h+='</div>';
   return h;
 }
@@ -187,14 +219,17 @@ function drawHdr(){
   document.getElementById('h-pvr').textContent='TPVR '+f$(s.tpvr)+' \u00b7 '+f$(s.t)+' gross';
 }
 
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function drawDB(){
   var s=ms(CUR), arr=repMap(s.deals);
-  var maxU=1;
-  arr.forEach(function(r){if(r.u>maxU)maxU=r.u;});
+  var maxU=1; arr.forEach(function(r){if(r.u>maxU)maxU=r.u;});
+  var maxT=1; arr.forEach(function(r){if(r.t>maxT)maxT=r.t;});
   var pyM=CUR.indexOf('2026')===0?CUR.replace('2026','2025'):null;
   var py=pyM&&ALL_DATA[pyM]?ms(pyM):null;
 
   var html=banner(s);
+
+  // KPI grid
   html+='<div class="kgrid">';
   var kpis=[
     {l:'RDR Units',v:s.rdr,s:'Goal '+s.goal+' \u00b7 '+(s.rdr>=s.goal?'\u2713 hit':s.goal-s.rdr+' short'),cls:s.rdr>=s.goal?'gn':'rd'},
@@ -212,7 +247,10 @@ function drawDB(){
   });
   html+='</div>';
 
+  // 2-col: goal bar + YOY | rep chart
   html+='<div class="g2">';
+
+  // Left: goal + YOY
   html+='<div class="card"><div class="sec">RDR vs goal</div>';
   html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">';
   html+=bar(s.rdr,s.goal,'#1D4ED8',12,'100%');
@@ -231,34 +269,40 @@ function drawDB(){
   }
   html+='</div>';
 
-  html+='<div class="card"><div class="sec">Rep units \u2014 '+ML[CUR]+'</div>';
-  arr.forEach(function(r){
-    html+='<div class="brow"><span style="color:'+r.c+';font-weight:700;width:52px;font-size:11px">'+r.n+'</span>';
-    html+='<div style="flex:1">'+bar(r.u,maxU,r.c,6,'100%')+'</div>';
-    html+='<span style="font-weight:700;color:'+r.c+';width:22px;text-align:right;font-size:13px">'+( r.u%1?r.u.toFixed(1):r.u)+'</span>';
-    html+='<span class="mu-txt" style="width:68px;text-align:right;font-size:10px">'+f$((r.f+r.b)/r.u)+' pvr</span></div>';
-  });
-  html+='</div></div>';
+  // Right: rep chart canvas
+  html+='<div class="card"><div class="sec">Rep performance \u2014 '+ML[CUR]+'</div>';
+  html+='<div class="ch" style="height:220px"><canvas id="cRepDB"></canvas></div></div>';
+  html+='</div>'; // end g2
 
-  html+='<div class="sec">Recent deliveries</div><div class="card" style="padding:0">';
-  html+='<table><thead><tr>';
-  html+='<th class="L">Date</th><th class="L">Rep</th><th class="L">Customer</th><th class="L">Vehicle</th>';
+  // All delivered deals for the month
+  var sorted=s.deals.slice().sort(function(a,b){return (a.del||a.date||'').localeCompare(b.del||b.date||'');});
+  var tf=sorted.reduce(function(s,d){return s+(d.front||0);},0);
+  var tb=sorted.reduce(function(s,d){return s+(d.back||0);},0);
+
+  html+='<div class="sec">All '+sorted.length+' deliveries \u2014 '+ML[CUR]+'</div>';
+  html+='<div class="card" style="padding:0;overflow-x:auto"><table>';
+  html+='<thead><tr><th class="L" style="width:22px">#</th><th class="L">Date</th><th class="L">Rep</th>';
+  html+='<th class="L">Customer</th><th class="L">Vehicle</th>';
   html+='<th>Front</th><th>Back</th><th>Total</th></tr></thead><tbody>';
-  var recent=s.deals.slice().sort(function(a,b){return (b.del||b.date||'').localeCompare(a.del||a.date||'');}).slice(0,12);
-  recent.forEach(function(d){
+  sorted.forEach(function(d,i){
     var rep=REPS[d.rep]||{c:'#64748B'}, tot=(d.front||0)+(d.back||0);
-    html+='<tr><td class="L mu-txt">'+((d.del||d.date||'').slice(5))+'</td>';
+    html+='<tr><td class="L mu-txt">'+(i+1)+'</td>';
+    html+='<td class="L mu-txt">'+((d.del||d.date||'').slice(5))+'</td>';
     html+='<td class="L" style="font-weight:700;color:'+rep.c+'">'+d.rep+'</td>';
     html+='<td class="L" style="color:var(--txt);font-weight:500">'+d.cust+'</td>';
     html+='<td class="L mu-txt">'+(d.comments||'')+'</td>';
-    html+='<td class="'+(((d.front||0)<0)?'rd-txt':'')+'">'+fp$(d.front||0)+'</td>';
+    html+='<td class="'+((d.front||0)<0?'rd-txt':'')+'">'+fp$(d.front||0)+'</td>';
     html+='<td>'+f$(d.back||0)+'</td>';
     html+='<td style="font-weight:700;color:'+(tot>=GP.tp?'var(--grn)':tot<0?'var(--red)':'var(--txt2)')+'">'+fp$(tot)+'</td></tr>';
   });
-  html+='</tbody></table></div>';
+  html+='</tbody><tfoot><tr><td class="L" colspan="5">'+sorted.length+' deals</td>';
+  html+='<td>'+fp$(tf)+'</td><td>'+f$(tb)+'</td>';
+  html+='<td style="color:var(--grn);font-weight:700">'+fp$(tf+tb)+'</td></tr></tfoot></table></div>';
+
   return html;
 }
 
+// ── DEALS ─────────────────────────────────────────────────────────────────────
 function drawDL(){
   var s=ms(CUR);
   var flt=RF==='ALL'?s.deals:s.deals.filter(function(d){return d.rep===RF;});
@@ -275,6 +319,16 @@ function drawDL(){
   btns+='</div>';
 
   var html=banner(s)+btns;
+
+  // Gross summary for this filter
+  html+='<div class="kgrid" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px">';
+  html+='<div class="kpi bl"><div class="kl">Deals</div><div class="kv bl-txt">'+sorted.length+'</div></div>';
+  html+='<div class="kpi '+(sf>=0?'':'rd')+'"><div class="kl">Front gross</div><div class="kv">'+fp$(sf)+'</div></div>';
+  html+='<div class="kpi"><div class="kl">F&amp;I gross</div><div class="kv">'+f$(sb)+'</div></div>';
+  html+='<div class="kpi '+(sf+sb>=135000?'gn':'')+'"><div class="kl">Total gross</div><div class="kv '+(sf+sb>=135000?'gn-txt':'')+'">'+fp$(sf+sb)+'</div>';
+  html+='<div class="ks">TPVR '+f$(sorted.length?((sf+sb)/sorted.length):0)+'</div></div>';
+  html+='</div>';
+
   html+='<div class="card" style="padding:0;overflow-x:auto"><table>';
   html+='<thead><tr><th class="L" style="width:22px">#</th><th class="L">Date</th><th class="L">Rep</th>';
   html+='<th class="L">Customer</th><th class="L">Vehicle</th><th class="L">Stk</th>';
@@ -297,6 +351,7 @@ function drawDL(){
   return html;
 }
 
+// ── REPS ─────────────────────────────────────────────────────────────────────
 function drawRP(){
   var s=ms(CUR), arr=repMap(s.deals);
   var maxT=1; arr.forEach(function(r){if(r.t>maxT)maxT=r.t;});
@@ -319,7 +374,6 @@ function drawRP(){
     html+='<td>'+bar(r.t,maxT,r.c,5,'80px')+' <span class="mu-txt">'+(s.u?Math.round(r.u/s.u*100):0)+'%</span></td></tr>';
   });
   html+='</tbody></table></div>';
-
   html+='<div class="sec" style="margin-top:16px">All-time \u2014 May 2025 through May 2026</div>';
   html+='<div class="card" style="padding:0"><table>';
   html+='<thead><tr><th class="L">Rep</th><th>Units</th><th>Front</th><th>F&amp;I</th><th>Total</th><th>FPVR</th><th>TPVR</th></tr></thead><tbody>';
@@ -333,9 +387,14 @@ function drawRP(){
     html+='<td style="font-weight:700" class="'+(r.u?gc(tpvr,GP.tp):'mu-txt')+'">'+(r.u?f$(tpvr):'—')+'</td></tr>';
   });
   html+='</tbody></table></div>';
+
+  // Selected month gross strip (populated on click)
+  html+='<div id="mdetail" style="margin-top:8px"></div>';
+
   return html;
 }
 
+// ── TRENDS ────────────────────────────────────────────────────────────────────
 function drawTR(){
   var monthly=MO.map(function(m){var s=ms(m);s.m=m;s.lb=ML[m];return s;});
   var r12=monthly.slice(-12);
@@ -348,7 +407,39 @@ function drawTR(){
   var tLabels={'13mo':'13 Months','ytd26':'YTD 2026','ytd25':'YTD 2025','q1':'Q1 2026','q2':'Q2 2026'};
   var mLabels={'tpvr':'Total PVR','fpvr':'Front PVR','bpvr':'Back PVR','units':'RDR Units','gross':'Total Gross'};
 
-  var html='<div class="kgrid">';
+  // Model mix for selected month
+  var mixDeals=(ALL_DATA[CUR]||[]).filter(function(d){return d.status==='Delivered';});
+  var mixMap={};
+  mixDeals.forEach(function(d){
+    var fam=modelFamily(d.comments);
+    if(!mixMap[fam])mixMap[fam]={u:0,t:0};
+    mixMap[fam].u++; mixMap[fam].t+=(d.front||0)+(d.back||0);
+  });
+  // All-time model mix
+  var allMixMap={};
+  MO.forEach(function(m){
+    (ALL_DATA[m]||[]).filter(function(d){return d.status==='Delivered';}).forEach(function(d){
+      var fam=modelFamily(d.comments);
+      if(!allMixMap[fam])allMixMap[fam]={u:0,t:0};
+      allMixMap[fam].u++; allMixMap[fam].t+=(d.front||0)+(d.back||0);
+    });
+  });
+
+  // Current month gross strip at top
+  var cs=ms(CUR);
+  var html='<div class="card" style="background:#EFF6FF;border-color:#93C5FD;margin-bottom:12px">';
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">';
+  html+='<span style="font-weight:700;font-size:13px;color:var(--blue)">'+ML[CUR]+'</span>';
+  html+='<div style="display:flex;flex-wrap:wrap;gap:16px;font-size:12px">';
+  html+='<span><span class="mu-txt">RDR </span><strong style="color:'+(cs.rdr>=cs.goal?'var(--grn)':'var(--red)')+'">'+cs.rdr+'/'+cs.goal+'</strong></span>';
+  html+='<span><span class="mu-txt">Front </span><strong>'+f$(cs.f)+'</strong></span>';
+  html+='<span><span class="mu-txt">F&amp;I </span><strong>'+f$(cs.b)+'</strong></span>';
+  html+='<span><span class="mu-txt">Total </span><strong style="color:var(--blue)">'+f$(cs.t)+'</strong></span>';
+  html+='<span><span class="mu-txt">FPVR </span><strong style="color:'+(cs.fpvr>=GP.fp?'var(--grn)':'var(--red)')+'">'+f$(cs.fpvr)+'</strong></span>';
+  html+='<span><span class="mu-txt">TPVR </span><strong style="color:'+(cs.tpvr>=GP.tp?'var(--grn)':'var(--red)')+'">'+f$(cs.tpvr)+'</strong></span>';
+  html+='</div></div></div>';
+
+  html+='<div class="kgrid">';
   [{l:'12-mo RDR units',v:R.u,c:'bl'},
    {l:'12-mo avg TPVR',v:f$(R.u?R.t/R.u:0),c:R.u&&R.t/R.u>=GP.tp?'gn':'rd'},
    {l:'YTD 2026 units',v:Y26.u,c:'bl'},
@@ -362,6 +453,7 @@ function drawTR(){
   });
   html+='</div>';
 
+  // Toggles
   html+='<div class="ttrow">';
   [['13mo','13 Months'],['ytd26','YTD 2026'],['ytd25','YTD 2025'],['q1','Q1 2026'],['q2','Q2 2026']].forEach(function(v){
     html+='<button class="ttbtn'+(TV===v[0]?' on':'')+'" data-v="'+v[0]+'" onclick="setTV(this.dataset.v)">'+v[1]+'</button>';
@@ -376,17 +468,50 @@ function drawTR(){
   html+='<div class="ch" style="height:230px"><canvas id="cMain"></canvas></div></div>';
   html+='<div class="card"><div class="sec">RDR units vs goal \u2014 all months</div>';
   html+='<div class="ch" style="height:210px"><canvas id="cUnits"></canvas></div></div>';
+
+  // Model mix - current month
+  // Sort mix by units desc, then gross desc
+  function mixRows(mixObj, total, barColor) {
+    var rows = Object.keys(mixObj).map(function(fam){return {fam:fam,u:mixObj[fam].u,t:mixObj[fam].t};});
+    rows.sort(function(a,b){ return b.u-a.u || b.t-a.t; });
+    var html='';
+    rows.forEach(function(v){
+      var avg=v.u?v.t/v.u:0;
+      html+='<tr><td class="L" style="font-weight:600">'+v.fam+'</td>';
+      html+='<td style="font-weight:700">'+v.u+'</td>';
+      html+='<td>'+f$(v.t)+'</td>';
+      html+='<td>'+f$(avg)+'</td>';
+      html+='<td>'+bar(v.u,total,barColor,5,'60px')+' <span class="mu-txt">'+Math.round(v.u/total*100)+'%</span></td></tr>';
+    });
+    return html;
+  }
+
+  html+='<div class="g2">';
+  html+='<div class="card"><div class="sec">Model mix \u2014 '+ML[CUR]+'</div>';
+  html+='<table><thead><tr><th class="L">Model</th><th>Units</th><th>Gross</th><th>Avg Gross</th><th style="width:80px">Mix</th></tr></thead><tbody>';
+  html+=mixRows(mixMap, mixDeals.length, '#1D4ED8');
+  html+='</tbody></table></div>';
+
+  html+='<div class="card"><div class="sec">Model mix \u2014 all 13 months</div>';
+  html+='<table><thead><tr><th class="L">Model</th><th>Units</th><th>Gross</th><th>Avg Gross</th><th style="width:80px">Mix</th></tr></thead><tbody>';
+  var allTotal=0;
+  Object.keys(allMixMap).forEach(function(k){allTotal+=allMixMap[k].u;});
+  html+=mixRows(allMixMap, allTotal, '#15803D');
+  html+='</tbody></table></div>';
+  html+='</div>'; // end g2
+
   html+='<div class="card"><div class="sec">Gross by rep \u2014 stacked all months</div>';
   html+='<div class="ch" style="height:260px"><canvas id="cRep"></canvas></div></div>';
 
+  // Month detail table
   html+='<div class="sec">Month detail</div><div class="card" style="padding:0;overflow-x:auto">';
   html+='<table style="min-width:580px"><thead><tr>';
   html+='<th class="L">Month</th><th>Goal</th><th>RDR</th><th>DMS</th><th>Diff</th>';
   html+='<th>FPVR</th><th>BPVR</th><th>TPVR</th><th>Total</th></tr></thead><tbody>';
   monthly.forEach(function(m){
     var hit=m.rdr>=m.goal, tOk=m.tpvr>=GP.tp, isCur=m.m===CUR;
-    html+='<tr style="'+(isCur?'background:#EFF6FF':'')+'" data-m="'+m.m+'" onclick="goM(this.dataset.m)" style="cursor:pointer">';
-    html+='<td class="L" style="font-weight:700;color:'+(isCur?'var(--blue)':'var(--txt2)')+'">'+m.lb+'</td>';
+    html+='<tr style="'+(isCur?'background:#EFF6FF':'')+'" data-m="'+m.m+'" onclick="trendClick(this.dataset.m)">';
+    html+='<td class="L" style="font-weight:700;cursor:pointer;color:'+(isCur?'var(--blue)':'var(--txt2)')+'">'+m.lb+'</td>';
     html+='<td class="mu-txt">'+m.goal+'</td>';
     html+='<td style="font-weight:700;color:'+(hit?'var(--grn)':'var(--red)')+'">'+m.rdr+'</td>';
     html+='<td class="mu-txt">'+m.u+'</td>';
@@ -397,11 +522,45 @@ function drawTR(){
     html+='<td>'+f$(m.t)+'</td></tr>';
   });
   html+='</tbody></table></div>';
+
+  // Selected month gross strip (populated on click)
+  html+='<div id="mdetail" style="margin-top:8px"></div>';
+
   return html;
 }
 
+// ── CHARTS ────────────────────────────────────────────────────────────────────
 function drawCharts(){
+  if(typeof Chart==='undefined')return;
+
+  // Dashboard rep chart
+  if(TAB==='db'){
+    var s=ms(CUR), arr=repMap(s.deals);
+    var c0=document.getElementById('cRepDB');
+    if(c0){
+      CH.repdb=new Chart(c0,{type:'bar',
+        data:{
+          labels:arr.map(function(r){return r.n;}),
+          datasets:[
+            {label:'Front',data:arr.map(function(r){return Math.max(0,r.f);}),backgroundColor:arr.map(function(r){return r.c+'CC';}),stack:'s',borderRadius:0},
+            {label:'F&I',data:arr.map(function(r){return r.b;}),backgroundColor:arr.map(function(r){return r.c+'66';}),stack:'s'},
+          ]
+        },
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}},
+            tooltip:{callbacks:{footer:function(items){
+              var tot=items.reduce(function(s,i){return s+i.raw;},0);
+              return 'Total: $'+Math.round(tot).toLocaleString();
+            }}}
+          },
+          scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,
+            ticks:{callback:function(v){return '$'+Math.round(v/1000)+'k';}}}}}});
+    }
+    return;
+  }
+
   if(TAB!=='tr')return;
+
   var monthly=MO.map(function(m){var s=ms(m);s.m=m;s.lb=ML[m];return s;});
   var vd;
   if(TV==='13mo')vd=monthly;
@@ -415,7 +574,7 @@ function drawCharts(){
   var gl=glMap[TM];
 
   var c1=document.getElementById('cMain');
-  if(c1&&typeof Chart!=='undefined'){
+  if(c1){
     var ds=[{label:TM,data:vd.map(mfn),borderColor:'#1D4ED8',backgroundColor:'rgba(29,78,216,0.07)',
       tension:0.35,fill:true,pointRadius:5,borderWidth:2,
       pointBackgroundColor:vd.map(function(m){return mfn(m)>=(gl||0)?'#15803D':'#B91C1C';}),
@@ -427,7 +586,7 @@ function drawCharts(){
   }
 
   var c2=document.getElementById('cUnits');
-  if(c2&&typeof Chart!=='undefined'){
+  if(c2){
     CH.units=new Chart(c2,{type:'bar',
       data:{labels:monthly.map(function(m){return m.lb;}),datasets:[
         {label:'RDR',data:monthly.map(function(m){return m.rdr;}),
@@ -440,7 +599,7 @@ function drawCharts(){
   }
 
   var c3=document.getElementById('cRep');
-  if(c3&&typeof Chart!=='undefined'){
+  if(c3){
     var ro=['KM','Deek','E$','BN','MO','JB','NS','Jonathan','OB','Robert'];
     CH.rep=new Chart(c3,{type:'bar',
       data:{labels:MO.map(function(m){return ML[m];}),datasets:ro.map(function(id){
@@ -460,7 +619,31 @@ function drawCharts(){
   }
 }
 
+// ── ROUTING ───────────────────────────────────────────────────────────────────
 window.goM=function(m){CUR=m;RF='ALL';killCh();drawAll();};
+
+function trendClick(m){
+  goM(m);
+  showMDetail(m);
+}
+
+function showMDetail(m){
+  var el=document.getElementById('mdetail');
+  if(!el)return;
+  var s=ms(m);
+  var html='<div class="card" style="background:#EFF6FF;border-color:#93C5FD">';
+  html+='<div class="sec" style="margin:0 0 8px">'+ML[m]+' — selected</div>';
+  html+='<div class="kgrid" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr));margin:0">';
+  html+='<div class="kpi bl"><div class="kl">RDR Units</div><div class="kv bl-txt">'+s.rdr+'</div><div class="ks">goal '+s.goal+'</div></div>';
+  html+='<div class="kpi"><div class="kl">Front gross</div><div class="kv">'+f$(s.f)+'</div></div>';
+  html+='<div class="kpi"><div class="kl">F&amp;I gross</div><div class="kv">'+f$(s.b)+'</div></div>';
+  html+='<div class="kpi '+(s.t>=135000?'gn':'')+'"><div class="kl">Total gross</div><div class="kv '+(s.t>=135000?'gn-txt':'')+'">'+f$(s.t)+'</div></div>';
+  html+='<div class="kpi '+(s.fpvr>=GP.fp?'gn':'rd')+'"><div class="kl">FPVR</div><div class="kv '+(s.fpvr>=GP.fp?'gn-txt':'rd-txt')+'">'+f$(s.fpvr)+'</div></div>';
+  html+='<div class="kpi '+(s.bpvr>=GP.bp?'gn':'')+'"><div class="kl">BPVR</div><div class="kv">'+f$(s.bpvr)+'</div></div>';
+  html+='<div class="kpi '+(s.tpvr>=GP.tp?'gn':'rd')+'"><div class="kl">TPVR</div><div class="kv '+(s.tpvr>=GP.tp?'gn-txt':'rd-txt')+'">'+f$(s.tpvr)+'</div></div>';
+  html+='</div></div>';
+  el.innerHTML=html;
+}
 window.goT=function(t){TAB=t;killCh();drawHdr();drawTbar();drawPage();};
 window.setRF=function(v){RF=v;drawPage();};
 window.setTV=function(v){TV=v;killCh();drawPage();};
@@ -468,7 +651,7 @@ window.setTM=function(v){TM=v;killCh();drawPage();};
 
 function drawPage(){
   var pg=document.getElementById('pg');
-  if(TAB==='db')pg.innerHTML=drawDB();
+  if(TAB==='db'){pg.innerHTML=drawDB();setTimeout(drawCharts,120);}
   else if(TAB==='dl')pg.innerHTML=drawDL();
   else if(TAB==='rp')pg.innerHTML=drawRP();
   else if(TAB==='tr'){pg.innerHTML=drawTR();setTimeout(drawCharts,120);}
